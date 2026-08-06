@@ -1,15 +1,55 @@
 import { SUPABASE_ANON_KEY, SUPABASE_URL, WEBSITE_BASE_URL } from './src/config.js';
+import { refreshActionBadge, runWatchSweep, updateActionBadge } from './src/watch/sweep.js';
+import { SWEEP_PERIOD_MINUTES } from './src/watch/plans.js';
 
 type WebsiteSession = {
   access_token: string;
   refresh_token: string;
 };
 
+const WATCH_ALARM = 'watch-sweep';
+
+function ensureWatchAlarm(): void {
+  if (!chrome.alarms?.create) return;
+  chrome.alarms.get(WATCH_ALARM, (existing) => {
+    void chrome.runtime.lastError;
+    if (existing) return;
+    chrome.alarms.create(WATCH_ALARM, {
+      periodInMinutes: SWEEP_PERIOD_MINUTES,
+      delayInMinutes: 1,
+    });
+  });
+}
+
 // Open side panel when extension icon is clicked
 chrome.runtime.onInstalled.addListener(() => {
   if (chrome.sidePanel?.setPanelBehavior) {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
   }
+  ensureWatchAlarm();
+  void refreshActionBadge();
+});
+
+// MV3 service workers are evicted aggressively, so re-register on every start.
+chrome.runtime.onStartup?.addListener(() => {
+  ensureWatchAlarm();
+  void refreshActionBadge();
+});
+
+ensureWatchAlarm();
+
+chrome.alarms?.onAlarm.addListener((alarm) => {
+  if (alarm.name !== WATCH_ALARM) return;
+  runWatchSweep()
+    .then((result) => {
+      if (result.skipped) return;
+      if (result.changesDetected > 0) {
+        chrome.runtime.sendMessage({ type: 'WATCH_CHANGES_DETECTED' }, () => {
+          void chrome.runtime.lastError;
+        });
+      }
+    })
+    .catch((error) => console.warn('Watch sweep failed', error));
 });
 
 // Notify side panel when active tab changes
@@ -165,6 +205,7 @@ chrome.runtime.onMessage.addListener(
 
     if (msg.type === 'WEBSITE_SIGN_OUT') {
       chrome.storage.local.remove('supabaseSession', () => {
+        void updateActionBadge(0);
         chrome.runtime.sendMessage({ type: 'EXTENSION_SIGNED_OUT' }, () => {
           void chrome.runtime.lastError;
         });
@@ -220,6 +261,29 @@ chrome.runtime.onMessage.addListener(
         }
       );
       sendResponse({ ok: true });
+      return true;
+    }
+
+    if (msg.type === 'WATCH_RUN_SWEEP') {
+      (async () => {
+        try {
+          sendResponse({ ok: true, result: await runWatchSweep() });
+        } catch (err: any) {
+          sendResponse({ ok: false, error: String(err?.message || err || 'Sweep failed') });
+        }
+      })();
+      return true;
+    }
+
+    if (msg.type === 'WATCH_REFRESH_BADGE') {
+      (async () => {
+        try {
+          await refreshActionBadge();
+          sendResponse({ ok: true });
+        } catch {
+          sendResponse({ ok: false });
+        }
+      })();
       return true;
     }
 

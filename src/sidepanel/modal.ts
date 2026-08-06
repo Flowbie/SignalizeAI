@@ -21,7 +21,7 @@ export async function openCheckout(variantId: string): Promise<void> {
   chrome.tabs.create({ url: checkoutUrl });
 }
 
-export function showLimitModal(type: 'save' | 'analysis' | 'upgrade'): void {
+export function showLimitModal(type: 'save' | 'analysis' | 'watch' | 'upgrade'): void {
   const modal = document.getElementById('limit-modal');
   const msgEl = document.getElementById('limit-modal-message');
   const headerEl = modal?.querySelector<HTMLHeadingElement>('.modal-header h3');
@@ -35,6 +35,11 @@ export function showLimitModal(type: 'save' | 'analysis' | 'upgrade'): void {
 
   if (type === 'save') {
     message = `You've reached your limit of ${state.maxSavedLimit} saved items. Upgrade to increase it.`;
+  } else if (type === 'watch') {
+    title = 'Watch Limit Reached';
+    message =
+      `You're watching ${state.maxWatchedLimit} accounts, the most your plan allows. ` +
+      'Upgrade to watch more accounts and check them more often.';
   } else if (type === 'analysis') {
     message = `You've used all ${state.dailyLimitFromAPI} daily prospect credits. Upgrade to increase your limit.`;
   } else {

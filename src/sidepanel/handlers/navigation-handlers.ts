@@ -4,6 +4,8 @@ import { state } from '../state.js';
 import { buildCopyText, copyAnalysisText } from '../clipboard.js';
 import { loadSettings } from '../settings.js';
 import { WEBSITE_BASE_URL } from '../../config.js';
+import { showToast } from '../toast.js';
+import { loadChangesFeed } from '../changes/render.js';
 
 export function setupNavigationHandlers(): void {
   const dropdownHeader = document.getElementById('dropdown-header');
@@ -70,6 +72,49 @@ export function setupNavigationHandlers(): void {
   dropdownMenu?.addEventListener('click', (e: MouseEvent) => {
     e.preventDefault();
     navigateTo('saved');
+  });
+
+  const changesMenu = document.getElementById('menu-changes');
+
+  changesMenu?.addEventListener('click', (e: MouseEvent) => {
+    e.preventDefault();
+    navigateTo('changes');
+  });
+
+  document.getElementById('changes-go-saved')?.addEventListener('click', (e: MouseEvent) => {
+    e.preventDefault();
+    navigateTo('saved');
+  });
+
+  const checkNowBtn = document.getElementById('changes-check-now') as HTMLButtonElement | null;
+
+  checkNowBtn?.addEventListener('click', () => {
+    checkNowBtn.disabled = true;
+    chrome.runtime.sendMessage({ type: 'WATCH_RUN_SWEEP' }, (response) => {
+      void chrome.runtime.lastError;
+      checkNowBtn.disabled = false;
+
+      const result = response?.result;
+      if (!response?.ok) {
+        showToast('Could not check accounts right now.');
+        return;
+      }
+      if (result?.skipped) {
+        showToast(`Check skipped: ${result.skipped}.`);
+        return;
+      }
+      if (!result?.checked) {
+        showToast('No accounts are due for a check yet.');
+        return;
+      }
+
+      showToast(
+        result.changesDetected > 0
+          ? `Checked ${result.checked} account(s), ${result.changesDetected} change(s) found.`
+          : `Checked ${result.checked} account(s), nothing changed.`
+      );
+      void loadChangesFeed();
+    });
   });
 
   const batchMenu = document.getElementById('menu-batch-analysis');

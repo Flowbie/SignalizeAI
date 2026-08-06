@@ -12,6 +12,9 @@ import { updateDeleteState, updateSelectAllIcon } from './selection.js';
 import { showUndoToast } from './delete.js';
 import { buildSavedOutreachMarkup } from './outreach-render.js';
 import { splitPersistedOutreachAngle } from '../analysis/outreach-angle.js';
+import { formatLastChecked, isWatchStalled, setWatchEnabled } from './watch.js';
+import { fetchSnapshotTimeline } from '../changes/data.js';
+import { renderTimelineInto } from '../changes/render.js';
 
 const exportToggle = document.getElementById('export-menu-toggle');
 const filterToggle = document.getElementById('filter-toggle');
@@ -31,6 +34,9 @@ interface SavedItem {
   recommended_outreach_goal?: string;
   recommended_outreach_angle?: string;
   prospect_status?: string;
+  watch_enabled?: boolean | null;
+  last_checked_at?: string | null;
+  check_failure_count?: number | null;
   [key: string]: any;
 }
 
@@ -161,6 +167,19 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
             : `<div class="saved-item-site-link">${item.domain || '—'}</div>`
         }
       </div>
+      <div class="saved-watch-row">
+        <label class="saved-watch-toggle" title="Re-check this account and alert me when it changes">
+          <input type="checkbox" class="saved-watch-checkbox" ${item.watch_enabled ? 'checked' : ''} />
+          <span>Watch</span>
+        </label>
+        <span class="saved-watch-state${isWatchStalled(item) ? ' saved-watch-state--stalled' : ''}">
+          ${
+            isWatchStalled(item)
+              ? 'Cannot check this site'
+              : escapeHtml(formatLastChecked(item.last_checked_at))
+          }
+        </span>
+      </div>
     </div>
 
     <div class="header-actions">
@@ -256,6 +275,13 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
 
     <hr style="margin:8px 0; opacity:0.3" />
 
+    <div class="saved-timeline-section">
+      <button class="saved-timeline-btn secondary-btn" type="button">Show history</button>
+      <div class="saved-timeline change-timeline hidden"></div>
+    </div>
+
+    <hr style="margin:8px 0; opacity:0.3" />
+
     <p><strong>What they do:</strong> ${item.what_they_do || '—'}</p>
     <p style="opacity:0.85">
       <strong>Company overview:</strong>
@@ -294,6 +320,54 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
     }
   </div>
 `;
+
+  const watchCheckbox = wrapper.querySelector<HTMLInputElement>('.saved-watch-checkbox');
+  const watchStateEl = wrapper.querySelector<HTMLElement>('.saved-watch-state');
+
+  watchCheckbox?.addEventListener('click', (e: MouseEvent) => e.stopPropagation());
+  watchCheckbox?.addEventListener('change', async (e: Event) => {
+    e.stopPropagation();
+    const nextEnabled = watchCheckbox.checked;
+    watchCheckbox.disabled = true;
+
+    const applied = await setWatchEnabled(item.id, nextEnabled);
+    watchCheckbox.disabled = false;
+
+    if (!applied) {
+      watchCheckbox.checked = !nextEnabled;
+      return;
+    }
+
+    item.watch_enabled = nextEnabled;
+    if (nextEnabled) item.check_failure_count = 0;
+    if (watchStateEl) {
+      watchStateEl.classList.remove('saved-watch-state--stalled');
+      watchStateEl.textContent = nextEnabled
+        ? formatLastChecked(item.last_checked_at)
+        : 'Not watched';
+    }
+  });
+
+  const timelineBtn = wrapper.querySelector<HTMLButtonElement>('.saved-timeline-btn');
+  const timelineEl = wrapper.querySelector<HTMLElement>('.saved-timeline');
+
+  timelineBtn?.addEventListener('click', async (e: MouseEvent) => {
+    e.stopPropagation();
+    if (!timelineEl) return;
+
+    if (!timelineEl.classList.contains('hidden')) {
+      timelineEl.classList.add('hidden');
+      timelineBtn.textContent = 'Show history';
+      return;
+    }
+
+    timelineBtn.disabled = true;
+    timelineEl.classList.remove('hidden');
+    timelineEl.innerHTML = '<p class="change-timeline-empty">Loading history…</p>';
+    renderTimelineInto(timelineEl, await fetchSnapshotTimeline(item.id));
+    timelineBtn.disabled = false;
+    timelineBtn.textContent = 'Hide history';
+  });
 
   const header = wrapper.querySelector<HTMLElement>('.saved-item-header')!;
   const body = wrapper.querySelector<HTMLElement>('.saved-item-body')!;
@@ -573,7 +647,8 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
     if (
       target?.closest('.saved-status-inline') ||
       target?.closest('.saved-status-save-btn') ||
-      target?.closest('.saved-status-cancel-btn')
+      target?.closest('.saved-status-cancel-btn') ||
+      target?.closest('.saved-watch-row')
     ) {
       return;
     }
@@ -636,7 +711,8 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
         (e.target as HTMLElement).closest('.open-dashboard-saved-btn') ||
         (e.target as HTMLElement).closest('.saved-status-save-btn') ||
         (e.target as HTMLElement).closest('.saved-status-cancel-btn') ||
-        (e.target as HTMLElement).closest('.saved-status-inline')
+        (e.target as HTMLElement).closest('.saved-status-inline') ||
+        (e.target as HTMLElement).closest('.saved-watch-row')
       ) {
         return;
       }

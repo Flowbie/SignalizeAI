@@ -2,6 +2,11 @@ import { QUOTA_TTL } from './constants.js';
 import { supabase } from './supabase.js';
 import { state } from './state.js';
 import { API_BASE_URL } from '../config.js';
+import {
+  FALLBACK_DAILY_ANALYSES,
+  FALLBACK_MAX_SAVED,
+  FALLBACK_WATCH_LIMITS,
+} from '../watch/plans.js';
 
 interface QuotaResponse {
   plan: string;
@@ -10,6 +15,34 @@ interface QuotaResponse {
   daily_limit: number;
   max_saved: number;
   total_saved: number;
+  max_watched?: number;
+  total_watched?: number;
+  check_interval_hours?: number;
+}
+
+/**
+ * Applied whenever the Worker is unreachable. These must match the Free plan,
+ * otherwise an outage shows the wrong cap and blocks saving.
+ */
+function applyQuotaFallbacks(): void {
+  state.currentPlan = state.currentPlan || 'free';
+  state.remainingToday = null;
+  state.usedToday = null;
+  state.dailyLimitFromAPI = state.dailyLimitFromAPI ?? FALLBACK_DAILY_ANALYSES;
+  state.maxSavedLimit = state.maxSavedLimit ?? FALLBACK_MAX_SAVED;
+  state.totalSavedCount = state.totalSavedCount ?? 0;
+  state.maxWatchedLimit = state.maxWatchedLimit ?? FALLBACK_WATCH_LIMITS.maxWatched;
+  state.totalWatchedCount = state.totalWatchedCount ?? 0;
+  state.checkIntervalHours = state.checkIntervalHours ?? FALLBACK_WATCH_LIMITS.checkIntervalHours;
+}
+
+/** "weekly" reads better than "every 168 hours" in a banner. */
+export function formatCheckInterval(hours: number): string {
+  if (!Number.isFinite(hours) || hours <= 0) return 'weekly';
+  if (hours >= 168) return 'weekly';
+  if (hours >= 48) return 'every 48h';
+  if (hours >= 24) return 'daily';
+  return `every ${Math.round(hours)}h`;
 }
 
 export async function loadQuotaFromAPI(force = false): Promise<void> {
@@ -29,12 +62,7 @@ export async function loadQuotaFromAPI(force = false): Promise<void> {
 
     if (!res.ok) {
       console.warn('Quota fetch failed:', res.status);
-      state.currentPlan = state.currentPlan || 'free';
-      state.remainingToday = null;
-      state.usedToday = null;
-      state.dailyLimitFromAPI = state.dailyLimitFromAPI ?? 5;
-      state.maxSavedLimit = state.maxSavedLimit ?? 3;
-      state.totalSavedCount = state.totalSavedCount ?? 0;
+      applyQuotaFallbacks();
       renderQuotaBanner();
       return;
     }
@@ -48,17 +76,16 @@ export async function loadQuotaFromAPI(force = false): Promise<void> {
       state.dailyLimitFromAPI = dataJson.daily_limit;
       state.maxSavedLimit = dataJson.max_saved ?? 0;
       state.totalSavedCount = dataJson.total_saved ?? 0;
+      state.maxWatchedLimit = dataJson.max_watched ?? FALLBACK_WATCH_LIMITS.maxWatched;
+      state.totalWatchedCount = dataJson.total_watched ?? 0;
+      state.checkIntervalHours =
+        dataJson.check_interval_hours ?? FALLBACK_WATCH_LIMITS.checkIntervalHours;
 
       renderQuotaBanner();
     }
   } catch (e) {
     console.warn('Quota fetch failed', e);
-    state.currentPlan = state.currentPlan || 'free';
-    state.remainingToday = null;
-    state.usedToday = null;
-    state.dailyLimitFromAPI = state.dailyLimitFromAPI ?? 5;
-    state.maxSavedLimit = state.maxSavedLimit ?? 3;
-    state.totalSavedCount = state.totalSavedCount ?? 0;
+    applyQuotaFallbacks();
     renderQuotaBanner();
   }
 }
@@ -85,19 +112,33 @@ export function renderQuotaBanner(): void {
   const usedPercent = Math.max(0, Math.min(100, Math.round((used / totalLimit) * 100)));
   const usedDegrees = Math.round((usedPercent / 100) * 360);
 
-  const savedText = `${Number(state.totalSavedCount ?? 0)} / ${Number(
+  // Watched accounts come first: under a monitoring model that is the number
+  // the user should see every time the panel opens.
+  const watchedText = `${Number(state.totalWatchedCount ?? 0)} / ${Number(
+    state.maxWatchedLimit ?? 0
+  )} watched`;
+
+  const savedText = `${watchedText} • ${Number(state.totalSavedCount ?? 0)} / ${Number(
     state.maxSavedLimit ?? 0
   )} saved`;
 
   if (state.remainingToday === null) {
     text.textContent = `Usage unavailable • ${savedText}`;
     if (usageRing) usageRing.style.setProperty('--progress-deg', '0deg');
-    if (resetTooltip) resetTooltip.textContent = 'Daily quota resets at 00:00 UTC';
+    if (resetTooltip) {
+      resetTooltip.textContent =
+        `Watched accounts are re-checked ${formatCheckInterval(state.checkIntervalHours)}. ` +
+        'Daily quota resets at 00:00 UTC';
+    }
     btn.classList.add('hidden');
   } else if (Number(state.remainingToday ?? 0) > 0) {
     text.textContent = `${used} / ${totalLimit} prospects • ${savedText}`;
     if (usageRing) usageRing.style.setProperty('--progress-deg', `${usedDegrees}deg`);
-    if (resetTooltip) resetTooltip.textContent = 'Daily quota resets at 00:00 UTC';
+    if (resetTooltip) {
+      resetTooltip.textContent =
+        `Watched accounts are re-checked ${formatCheckInterval(state.checkIntervalHours)}. ` +
+        'Daily quota resets at 00:00 UTC';
+    }
 
     if (state.currentPlan === 'team') {
       btn.classList.add('hidden');
@@ -108,7 +149,11 @@ export function renderQuotaBanner(): void {
   } else {
     text.textContent = `Daily limit reached • ${savedText}`;
     if (usageRing) usageRing.style.setProperty('--progress-deg', '360deg');
-    if (resetTooltip) resetTooltip.textContent = 'Daily quota resets at 00:00 UTC';
+    if (resetTooltip) {
+      resetTooltip.textContent =
+        `Watched accounts are re-checked ${formatCheckInterval(state.checkIntervalHours)}. ` +
+        'Daily quota resets at 00:00 UTC';
+    }
     if (state.currentPlan === 'team') {
       btn.classList.add('hidden');
     } else {

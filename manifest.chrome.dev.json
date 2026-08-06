@@ -3,7 +3,7 @@
   "name": "SignalizeAI",
   "version": "5.4.1",
   "description": "Find the right angle to sell to any company in seconds. Get clear strategy, targeting, and outreach you can actually use without guessing.",
-  "permissions": ["activeTab", "sidePanel", "storage", "tabs", "scripting"],
+  "permissions": ["activeTab", "sidePanel", "storage", "tabs", "scripting", "alarms"],
   "host_permissions": [
     "https://*.supabase.co/*",
     "https://api.signalizeai.org/*",

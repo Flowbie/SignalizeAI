@@ -1,0 +1,263 @@
+#changes-view {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  max-width: 400px;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.changes-meta {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.changes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.change-card {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 14px 16px;
+  transition: border-color 0.2s;
+}
+
+.change-card:hover {
+  border-color: var(--border-strong);
+}
+
+.change-card--major {
+  border-left-color: var(--accent-color, #16a34a);
+}
+
+.change-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.change-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.change-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.change-badge--pricing {
+  color: #16a34a;
+  border-color: #16a34a55;
+}
+
+.change-badge--hiring {
+  color: #2563eb;
+  border-color: #2563eb55;
+}
+
+.change-badge--messaging {
+  color: #d97706;
+  border-color: #d9770655;
+}
+
+.change-badge--new_page {
+  color: #7c3aed;
+  border-color: #7c3aed55;
+}
+
+.change-domain {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.change-date {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.change-summary {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.change-diff {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.change-diff-row {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.change-diff-label {
+  flex-shrink: 0;
+  width: 46px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.change-diff-text {
+  min-width: 0;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.change-diff-row--before .change-diff-text {
+  opacity: 0.7;
+}
+
+.change-opener {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  border: 1px dashed var(--border-color);
+}
+
+.change-opener--missing {
+  font-style: normal;
+  opacity: 0.65;
+}
+
+.change-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.change-card-actions .secondary-btn {
+  font-size: 12px;
+  padding: 5px 10px;
+  width: auto;
+  height: auto;
+}
+
+.change-timeline {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.change-timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.change-timeline-item {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.change-timeline-item--failed {
+  opacity: 0.6;
+}
+
+.change-timeline-date {
+  flex-shrink: 0;
+  width: 56px;
+  color: var(--text-secondary);
+}
+
+.change-timeline-detail {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.change-timeline-empty,
+.change-timeline-locked {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Watch toggle on saved prospect rows */
+.saved-watch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.saved-watch-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.saved-watch-toggle input {
+  cursor: pointer;
+  margin: 0;
+}
+
+.saved-watch-state--stalled {
+  color: #d97706;
+}
+
+.menu-item-badge {
+  margin-left: auto;
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background-color: var(--accent-color, #16a34a);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.menu-item-badge.hidden {
+  display: none;
+}

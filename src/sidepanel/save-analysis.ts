@@ -80,10 +80,17 @@ export async function ensureCurrentAnalysisSaved(): Promise<string | null> {
     saveContentHash = homepageResult.contentHash;
   }
 
+  // "Save" and "watch" being two separate actions is a step users will not
+  // take, so saving opts into watching whenever the user is under their watch
+  // cap. Over the cap the prospect is still saved, just not monitored, and the
+  // per-row toggle lets them choose which accounts to watch.
+  const canWatch = state.totalWatchedCount < state.maxWatchedLimit;
+
   const { data: insertData, error } = await supabase
     .from('saved_analyses')
     .insert({
       user_id: user.id,
+      watch_enabled: canWatch,
       domain: saveMeta.domain,
       url: originUrl,
       title: saveMeta.title,
@@ -136,6 +143,9 @@ export async function ensureCurrentAnalysisSaved(): Promise<string | null> {
   }
   if (Number.isFinite(state.totalSavedCount)) {
     state.totalSavedCount += 1;
+  }
+  if (canWatch && Number.isFinite(state.totalWatchedCount)) {
+    state.totalWatchedCount += 1;
   }
   renderQuotaBanner();
   loadSavedAnalyses();

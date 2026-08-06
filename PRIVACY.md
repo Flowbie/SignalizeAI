@@ -1,6 +1,6 @@
 # Privacy Policy for SignalizeAI
 
-**Last updated:** 9 March 2026
+**Last updated:** 6 August 2026
 
 SignalizeAI (“we”, “our”, or “the extension”) is a Chrome and Firefox extension designed to help users analyze publicly available business websites and generate sales-related insights.
 
@@ -12,8 +12,9 @@ We take user privacy seriously. This Privacy Policy explains what data we collec
 
 SignalizeAI processes **publicly available content** from:
 
-- The currently active browser tab (single analysis), and
-- User-submitted URLs in batch mode (CSV upload or pasted URL list)
+- The currently active browser tab (single analysis),
+- User-submitted URLs in batch mode (CSV upload or pasted URL list), and
+- Saved prospects the user has explicitly put under watch (see 1.5)
 
 Processed content may include:
 
@@ -60,6 +61,27 @@ If a user chooses to save analyses:
 
 This data is stored securely in Supabase and is **only accessible to the authenticated user**.
 
+### 1.5 Account Monitoring (Optional)
+
+If a user turns on watching for a saved prospect, the extension re-reads that
+company's public website on a schedule so it can tell the user what changed.
+
+- All fetching is performed **by the user's own browser**, from the user's own
+  network, using the same public pages anyone can open. Our servers never fetch
+  third-party websites.
+- Checks only run while the browser is open, and only for domains the user saved
+  and explicitly kept under watch. Watching can be turned off per prospect at any
+  time, which stops all further checks for that domain.
+- Only the pages needed for the comparison are read: the homepage, and, when they
+  exist, the company's pricing and careers pages.
+- For each check we store a snapshot containing the page title, meta description,
+  headings, top-level navigation links, pricing figures, and job titles, plus the
+  time of the check. Snapshots are kept per user, are visible only to that user,
+  and the oldest are deleted automatically so only a recent window is retained.
+- When a change is detected, the before and after text of that change may be sent
+  to our AI provider to generate a one-line summary and a suggested opening line,
+  under the same terms as section 3.
+
 ## 2. How We Use Data
 
 Collected data is used strictly for:
@@ -68,6 +90,7 @@ Collected data is used strictly for:
 - Displaying results within the extension
 - Running user-requested batch analyses
 - Saving user-requested analyses
+- Detecting and reporting changes on prospects the user has put under watch
 - Improving extension functionality and user experience within the extension
 
 We do **not**:
@@ -101,6 +124,7 @@ SignalizeAI requests the following permissions:
 - **tabs**: To identify the active tab and read its URL for analysis context
 - **scripting**: To inject the content extraction script into the active tab on demand
 - **storage**: To save user settings and preferences
+- **alarms**: To schedule background re-checks of the prospects a user has put under watch
 - **sidePanel / sidebar_action**: To display analysis results (Chrome uses Side Panel; Firefox uses the sidebar)
 - **Host permissions**:
   - `https://*.supabase.co/*` for authentication and storage
@@ -112,6 +136,8 @@ These permissions are used **only for core functionality**.
 ## 6. Data Retention & Deletion
 
 - Users may delete saved analyses at any time
+- Deleting a saved prospect deletes its stored snapshots and change history
+- Turning off watching for a prospect stops all further background checks for it
 - Users may sign out to remove access
 - Upon account deletion, all user data is removed from our systems
 

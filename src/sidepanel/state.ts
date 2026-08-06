@@ -57,7 +57,7 @@ export interface State {
   lastExtractedEvidence: ExtractedEvidence | null;
   lastAnalyzedDomain: string | null;
   forceRefresh: boolean;
-  currentView: 'analysis' | 'saved' | 'batch' | 'profile' | 'settings' | null;
+  currentView: 'analysis' | 'saved' | 'batch' | 'changes' | 'profile' | 'settings' | null;
   selectionMode: boolean;
   lastSelectedIndex: number | null;
   selectedSavedIds: Set<string>;
@@ -74,6 +74,12 @@ export interface State {
   maxSavedLimit: number;
   totalSavedCount: number;
   dailyLimitFromAPI: number;
+  /** Watch caps and check frequency, from /quota. Frequency is the paid lever. */
+  maxWatchedLimit: number;
+  totalWatchedCount: number;
+  checkIntervalHours: number;
+  /** Undismissed change alerts, and how many of those the user has not seen. */
+  unseenChangesCount: number;
   isUserInteracting: boolean;
   dropdownOpenedAt: number;
   isAnalysisLoading: boolean;
@@ -109,9 +115,13 @@ export const state: State = {
   currentPlan: 'free',
   remainingToday: null,
   usedToday: null,
-  maxSavedLimit: 5,
+  maxSavedLimit: 25,
   totalSavedCount: 0,
   dailyLimitFromAPI: 5,
+  maxWatchedLimit: 3,
+  totalWatchedCount: 0,
+  checkIntervalHours: 168,
+  unseenChangesCount: 0,
   isUserInteracting: false,
   dropdownOpenedAt: 0,
   isAnalysisLoading: false,
