@@ -23,11 +23,15 @@ interface QuotaResponse {
 /**
  * Applied whenever the Worker is unreachable. These must match the Free plan,
  * otherwise an outage shows the wrong cap and blocks saving.
+ *
+ * remainingToday stays null on purpose: it is the gate every analysis path
+ * checks, and a stale 0 would lock the user out for the length of an outage we
+ * caused. usedToday is display-only, so the last figure we did fetch is kept —
+ * a stale count reads better than collapsing the banner to "Usage unavailable".
  */
 function applyQuotaFallbacks(): void {
   state.currentPlan = state.currentPlan || 'free';
   state.remainingToday = null;
-  state.usedToday = null;
   state.dailyLimitFromAPI = state.dailyLimitFromAPI ?? FALLBACK_DAILY_ANALYSES;
   state.maxSavedLimit = state.maxSavedLimit ?? FALLBACK_MAX_SAVED;
   state.totalSavedCount = state.totalSavedCount ?? 0;
@@ -49,7 +53,6 @@ export async function loadQuotaFromAPI(force = false): Promise<void> {
   if (!force && Date.now() - state.lastQuotaFetch < QUOTA_TTL) return;
   const { data } = await supabase.auth.getSession();
   if (!data?.session) return;
-  state.lastQuotaFetch = Date.now();
 
   const jwt = data.session.access_token;
 
@@ -70,6 +73,10 @@ export async function loadQuotaFromAPI(force = false): Promise<void> {
     const dataJson = (await res.json()) as QuotaResponse;
 
     if (dataJson.plan) {
+      // Only a fetch that actually produced figures earns the cache window.
+      // Stamping before the request meant one failure suppressed every
+      // non-forced retry for the whole TTL, including reopening the panel.
+      state.lastQuotaFetch = Date.now();
       state.currentPlan = dataJson.plan;
       state.remainingToday = dataJson.remaining_today;
       state.usedToday = dataJson.used_today;
@@ -152,8 +159,17 @@ export function renderQuotaBanner(): void {
   const tailSegments = [watchedText, savedOnlyText];
 
   if (state.remainingToday === null) {
-    renderQuotaSegments(text, ['Usage unavailable', ...tailSegments]);
-    if (usageRing) usageRing.style.setProperty('--progress-deg', '0deg');
+    // A failed refresh nulls the gate but keeps the last usedToday we fetched,
+    // so show that rather than blanking a counter we do know.
+    renderQuotaSegments(text, [
+      state.usedToday === null ? 'Usage unavailable' : `${used} / ${totalLimit} prospects`,
+      ...tailSegments,
+    ]);
+    if (usageRing)
+      usageRing.style.setProperty(
+        '--progress-deg',
+        state.usedToday === null ? '0deg' : `${usedDegrees}deg`
+      );
     if (resetTooltip) {
       resetTooltip.textContent =
         `Watched accounts are re-checked ${formatCheckInterval(state.checkIntervalHours)}. ` +
