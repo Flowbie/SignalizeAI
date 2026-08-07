@@ -61,11 +61,11 @@
 .csv-drop-zone.has-file {
   border-color: var(--accent-light);
   background: linear-gradient(180deg, var(--accent-blue-bg) 0%, var(--bg-primary) 100%);
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 0 1px var(--accent-soft);
 }
 
 .csv-drop-zone.has-file .drop-zone-icon-wrapper {
-  background: rgba(59, 130, 246, 0.16);
+  background: var(--accent-soft);
   color: var(--accent-light);
 }
 
@@ -157,7 +157,7 @@
 
 #batch-paste-submit-btn.has-content {
   background: var(--accent-light) !important;
-  color: #fff !important;
+  color: var(--accent-on) !important;
   box-shadow: 0 0 12px var(--accent-blue-bg) !important;
   opacity: 1 !important;
 }
@@ -170,7 +170,7 @@
 
 #batch-csv-submit-btn.has-file {
   background: var(--accent-light) !important;
-  color: #fff !important;
+  color: var(--accent-on) !important;
   box-shadow: 0 0 12px var(--accent-blue-bg) !important;
   opacity: 1 !important;
   pointer-events: auto !important;

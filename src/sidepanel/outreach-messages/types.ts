@@ -44,7 +44,7 @@ export type ReplyProbability = 'High' | 'Medium' | 'Low';
 
 /**
  * Compute reply probability client-side from existing analysis data.
- * No extra AI call needed — derived from salesReadinessScore and persona.
+ * No extra AI call needed, derived from salesReadinessScore and persona.
  */
 export function computeReplyProbability(
   angleId: AngleId,

@@ -267,7 +267,7 @@ chrome.runtime.onMessage.addListener(
     if (msg.type === 'WATCH_RUN_SWEEP') {
       (async () => {
         try {
-          sendResponse({ ok: true, result: await runWatchSweep() });
+          sendResponse({ ok: true, result: await runWatchSweep({ force: true }) });
         } catch (err: any) {
           sendResponse({ ok: false, error: String(err?.message || err || 'Sweep failed') });
         }

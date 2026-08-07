@@ -224,17 +224,24 @@
 }
 
 .section-label {
-  font-size: 12px;
-  font-weight: 600;
+  /* Metadata, not content: small, mono, tracked, and quiet. Previously this
+     was 12px/600 in --text-secondary while the value it labelled was 14px/400
+     in the dimmer --text-tertiary, so the label out-shouted the answer.
+     The size, mono face and casing carry the hierarchy, the colour stays at
+     --text-secondary because --text-muted only reaches 3:1 at 10px. */
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.13em;
   margin: 0;
 }
 
 .content-text {
+  /* The content is what the user came to read, full strength. */
   font-size: 14px;
-  color: var(--text-tertiary);
+  color: var(--text-primary);
   line-height: 1.6;
   margin: 0;
   word-wrap: break-word;
@@ -279,7 +286,7 @@
 
 #manual-url-input:not(:placeholder-shown) + #manual-url-btn {
   background: var(--accent-light) !important;
-  color: #fff !important;
+  color: var(--accent-on) !important;
   box-shadow: 0 0 12px var(--accent-blue-bg) !important;
 }
 
@@ -294,4 +301,86 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+}
+
+/* ── Quick website check ──────────────────────────────────────────────
+   Previously inline styles plus onfocus/onblur/onmousedown attributes. MV3's
+   CSP is script-src 'self', so those inline handlers never ran, the focus
+   ring and press state were dead markup. Expressed as real CSS they work. */
+
+.url-check {
+  margin-bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.url-check-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.url-check-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.url-check-input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.url-check-input::placeholder {
+  color: var(--text-muted);
+}
+
+.url-check-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.url-check-btn {
+  height: 40px;
+  padding: 0 16px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent-color);
+  color: var(--accent-on);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--transition),
+    transform var(--transition);
+}
+
+.url-check-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.url-check-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.url-check-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

@@ -179,7 +179,7 @@ export function attachOutreachHandlers(): void {
     ?.addEventListener('click', onGenerateFollowUpsClick);
   document.getElementById('outreach-jump-btn')?.addEventListener('click', jumpToOutreachArea);
 
-  // Copy buttons are created dynamically — use event delegation on the list container
+  // Copy buttons are created dynamically, so use event delegation on the list container
   document.getElementById('outreach-messages-section')?.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest(
       '.variation-copy-btn'

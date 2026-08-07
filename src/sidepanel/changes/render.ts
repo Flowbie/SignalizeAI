@@ -58,7 +58,10 @@ function truncate(value: string | null | undefined, max = 220): string {
 
 function buildChangeCard(change: ProspectChange): HTMLElement {
   const card = document.createElement('div');
-  card.className = `change-card change-card--${change.severity}`;
+  // Tagged at build time, before the feed marks everything seen, so alerts the
+  // user has not looked at yet stay visibly distinct for this render.
+  const unseen = change.seen_at ? '' : ' change-card--unseen';
+  card.className = `change-card change-card--${change.severity}${unseen}`;
   card.dataset.changeId = change.id;
   card.dataset.savedId = change.saved_analysis_id;
 
@@ -66,6 +69,7 @@ function buildChangeCard(change: ProspectChange): HTMLElement {
   // The raw before/after is always shown, so a failed generation degrades to a
   // less pretty alert rather than to nothing.
   const opener = change.suggested_opener?.trim() || '';
+  const hasBefore = Boolean(String(change.before_text || '').trim());
 
   card.innerHTML = `
     <div class="change-card-header">
@@ -81,12 +85,18 @@ function buildChangeCard(change: ProspectChange): HTMLElement {
     <p class="change-summary">${escapeHtml(change.summary || 'Something changed on this account.')}</p>
 
     <div class="change-diff">
-      <div class="change-diff-row change-diff-row--before">
+      ${
+        // An addition (a new role, a new page) has no meaningful before, and an
+        // empty labelled row reads as missing data rather than as "this is new".
+        hasBefore
+          ? `<div class="change-diff-row change-diff-row--before">
         <span class="change-diff-label">Before</span>
         <span class="change-diff-text">${escapeHtml(truncate(change.before_text))}</span>
-      </div>
+      </div>`
+          : ''
+      }
       <div class="change-diff-row change-diff-row--after">
-        <span class="change-diff-label">After</span>
+        <span class="change-diff-label">${hasBefore ? 'After' : 'Added'}</span>
         <span class="change-diff-text">${escapeHtml(truncate(change.after_text))}</span>
       </div>
     </div>
@@ -98,7 +108,9 @@ function buildChangeCard(change: ProspectChange): HTMLElement {
     }
 
     <div class="change-card-actions">
-      <button class="change-copy-btn secondary-btn" type="button">Copy opener</button>
+      <button class="change-copy-btn secondary-btn secondary-btn--primary" type="button">${
+        opener ? 'Copy opener' : 'Copy details'
+      }</button>
       <button class="change-timeline-btn secondary-btn" type="button">History</button>
       <button class="change-dismiss-btn secondary-btn" type="button">Dismiss</button>
     </div>
@@ -205,12 +217,47 @@ export function updateChangesEmptyState(): void {
   empty.classList.toggle('hidden', hasCards);
 }
 
+/**
+ * A flat, reverse-chronological list reads as one undifferentiated stream, and
+ * "4m ago" against "Yesterday" against a date gives no sense of what arrived
+ * in this batch. Grouping by day makes the recent set obvious at a glance.
+ */
+function dayBucket(iso: string): string {
+  const when = new Date(iso);
+  if (Number.isNaN(when.getTime())) return 'Earlier';
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfYesterday = new Date(startOfToday);
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+  const startOfWeek = new Date(startOfToday);
+  startOfWeek.setDate(startOfWeek.getDate() - 6);
+
+  if (when >= startOfToday) return 'Today';
+  if (when >= startOfYesterday) return 'Yesterday';
+  if (when >= startOfWeek) return 'This week';
+  return 'Earlier';
+}
+
+function buildDayHeading(label: string, count: number): HTMLElement {
+  const heading = document.createElement('div');
+  heading.className = 'changes-day';
+  heading.innerHTML =
+    `<span class="changes-day-label">${escapeHtml(label)}</span>` +
+    `<span class="changes-day-count">${count}</span>`;
+  return heading;
+}
+
 function renderChangesMeta(): void {
   const meta = document.getElementById('changes-meta');
   if (!meta) return;
 
+  // Lead with the number that answers "is there anything for me", then the
+  // quota. The watch count was first, which is the least urgent fact here.
+  const unseen = state.unseenChangesCount || 0;
+  const lead = unseen > 0 ? `${unseen} new · ` : '';
   meta.textContent =
-    `${state.totalWatchedCount} of ${state.maxWatchedLimit} accounts watched • ` +
+    `${lead}${state.totalWatchedCount} of ${state.maxWatchedLimit} accounts watched · ` +
     `checked ${formatCheckInterval(state.checkIntervalHours)}`;
 }
 
@@ -229,7 +276,16 @@ export async function loadChangesFeed(): Promise<void> {
 
   loading?.classList.add('hidden');
 
-  changes.forEach((change) => list?.appendChild(buildChangeCard(change)));
+  let currentBucket = '';
+  for (const change of changes) {
+    const bucket = dayBucket(change.detected_at);
+    if (bucket !== currentBucket) {
+      currentBucket = bucket;
+      const inBucket = changes.filter((c) => dayBucket(c.detected_at) === bucket).length;
+      list?.appendChild(buildDayHeading(bucket, inBucket));
+    }
+    list?.appendChild(buildChangeCard(change));
+  }
   updateChangesEmptyState();
 
   // Opening the feed is what "seen" means. Clears the action badge.

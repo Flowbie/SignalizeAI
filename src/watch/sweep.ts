@@ -373,19 +373,28 @@ async function releaseSweepLock(): Promise<void> {
 export interface SweepResult {
   checked: number;
   changesDetected: number;
+  /**
+   * Accounts whose first usable snapshot was taken this pass. They cannot
+   * report a change yet, and reporting them as "nothing changed" reads as the
+   * feature being broken on the very first check.
+   */
+  baselines: number;
   skipped: string | null;
 }
+
+/** Outcome of checking a single watched account. */
+type CheckOutcome = 'change' | 'baseline' | 'none' | 'failed';
 
 /**
  * One sweep pass. Processes at most SWEEP_BATCH_SIZE domains sequentially so a
  * sweep never competes with a user-initiated analysis for the fetch path.
  */
-export async function runWatchSweep(): Promise<SweepResult> {
+export async function runWatchSweep(options?: { force?: boolean }): Promise<SweepResult> {
   const session = await getWatchSession();
-  if (!session) return { checked: 0, changesDetected: 0, skipped: 'not signed in' };
+  if (!session) return { checked: 0, changesDetected: 0, baselines: 0, skipped: 'not signed in' };
 
   if (!(await acquireSweepLock())) {
-    return { checked: 0, changesDetected: 0, skipped: 'sweep already running' };
+    return { checked: 0, changesDetected: 0, baselines: 0, skipped: 'sweep already running' };
   }
 
   try {
@@ -399,23 +408,32 @@ export async function runWatchSweep(): Promise<SweepResult> {
         '&order=last_checked_at.asc.nullsfirst&limit=100'
     );
 
-    if (!ok) return { checked: 0, changesDetected: 0, skipped: 'could not read watch list' };
+    if (!ok)
+      return { checked: 0, changesDetected: 0, baselines: 0, skipped: 'could not read watch list' };
 
-    const due = watched
-      .filter((row) =>
-        isDueForCheck({
-          lastCheckedAt: row.last_checked_at,
-          intervalHours,
-          domain: row.domain,
-        })
-      )
-      .slice(0, SWEEP_BATCH_SIZE);
+    // A manual "check now" bypasses the plan interval. Without this the button
+    // silently does nothing until the interval elapses (a week on Free), which
+    // reads as the feature being broken.
+    const due = (
+      options?.force
+        ? watched
+        : watched.filter((row) =>
+            isDueForCheck({
+              lastCheckedAt: row.last_checked_at,
+              intervalHours,
+              domain: row.domain,
+            })
+          )
+    ).slice(0, SWEEP_BATCH_SIZE);
 
     let changesDetected = 0;
+    let baselines = 0;
 
     for (const row of due) {
       try {
-        if (await checkOneProspect(session, row)) changesDetected += 1;
+        const outcome = await checkOneProspect(session, row);
+        if (outcome === 'change') changesDetected += 1;
+        else if (outcome === 'baseline') baselines += 1;
       } catch (error) {
         console.warn('Watch check failed for', row.domain, error);
       }
@@ -423,14 +441,13 @@ export async function runWatchSweep(): Promise<SweepResult> {
 
     await updateActionBadge(await countUnseenChanges(session));
 
-    return { checked: due.length, changesDetected, skipped: null };
+    return { checked: due.length, changesDetected, baselines, skipped: null };
   } finally {
     await releaseSweepLock();
   }
 }
 
-/** Returns true when a change was recorded. */
-async function checkOneProspect(session: WatchSession, row: WatchedRow): Promise<boolean> {
+async function checkOneProspect(session: WatchSession, row: WatchedRow): Promise<CheckOutcome> {
   const snapshot = await captureSnapshot(row);
   const now = new Date().toISOString();
 
@@ -450,7 +467,7 @@ async function checkOneProspect(session: WatchSession, row: WatchedRow): Promise
       snapshotToRow(session, row.id, snapshot)
     );
     await pruneSnapshots(session, row.id);
-    return false;
+    return 'failed';
   }
 
   const { data: previousRows } = await restSelect<SnapshotRow>(
@@ -473,8 +490,12 @@ async function checkOneProspect(session: WatchSession, row: WatchedRow): Promise
     check_failure_count: 0,
   });
 
+  // No previous usable snapshot means this pass established the baseline.
+  // Report it distinctly so the UI does not claim "nothing changed".
+  if (!previous) return 'baseline';
+
   const { alert } = diffSnapshots(previous, snapshot);
-  if (!alert) return false;
+  if (!alert) return 'none';
 
   const { summary, suggestedOpener } = await requestChangeSummary(session, row.domain, alert);
 
@@ -491,5 +512,5 @@ async function checkOneProspect(session: WatchSession, row: WatchedRow): Promise
     suggested_opener: suggestedOpener,
   });
 
-  return inserted.ok;
+  return inserted.ok ? 'change' : 'none';
 }

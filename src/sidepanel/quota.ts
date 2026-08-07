@@ -90,6 +90,34 @@ export async function loadQuotaFromAPI(force = false): Promise<void> {
   }
 }
 
+/**
+ * Render the counters as discrete segments rather than one string.
+ *
+ * As a single "a • b • c" string the browser could only break at spaces, so a
+ * narrow panel split counters mid-phrase ("4 /" on one line, "200 saved" on the
+ * next). Each segment is its own non-breaking unit, so the row wraps between
+ * counters and never inside one.
+ */
+function renderQuotaSegments(el: HTMLElement, segments: string[]): void {
+  el.textContent = '';
+  for (const segment of segments) {
+    const span = document.createElement('span');
+    span.className = 'quota-seg';
+    // Split "2 / 50 prospects" into its figure and its label so the number can
+    // carry the emphasis and the label can recede.
+    const match = segment.match(/^(\S+(?:\s*\/\s*\S+)?)\s+(.*)$/);
+    if (match) {
+      const value = document.createElement('b');
+      value.className = 'quota-seg-value';
+      value.textContent = match[1];
+      span.append(value, ' ' + match[2]);
+    } else {
+      span.textContent = segment;
+    }
+    el.appendChild(span);
+  }
+}
+
 export function renderQuotaBanner(): void {
   const banner = document.getElementById('quota-banner');
   const text = document.getElementById('quota-text');
@@ -118,12 +146,13 @@ export function renderQuotaBanner(): void {
     state.maxWatchedLimit ?? 0
   )} watched`;
 
-  const savedText = `${watchedText} • ${Number(state.totalSavedCount ?? 0)} / ${Number(
+  const savedOnlyText = `${Number(state.totalSavedCount ?? 0)} / ${Number(
     state.maxSavedLimit ?? 0
   )} saved`;
+  const tailSegments = [watchedText, savedOnlyText];
 
   if (state.remainingToday === null) {
-    text.textContent = `Usage unavailable • ${savedText}`;
+    renderQuotaSegments(text, ['Usage unavailable', ...tailSegments]);
     if (usageRing) usageRing.style.setProperty('--progress-deg', '0deg');
     if (resetTooltip) {
       resetTooltip.textContent =
@@ -132,7 +161,7 @@ export function renderQuotaBanner(): void {
     }
     btn.classList.add('hidden');
   } else if (Number(state.remainingToday ?? 0) > 0) {
-    text.textContent = `${used} / ${totalLimit} prospects • ${savedText}`;
+    renderQuotaSegments(text, [`${used} / ${totalLimit} prospects`, ...tailSegments]);
     if (usageRing) usageRing.style.setProperty('--progress-deg', `${usedDegrees}deg`);
     if (resetTooltip) {
       resetTooltip.textContent =
@@ -147,7 +176,7 @@ export function renderQuotaBanner(): void {
       btn.textContent = 'Upgrade';
     }
   } else {
-    text.textContent = `Daily limit reached • ${savedText}`;
+    renderQuotaSegments(text, ['Daily limit reached', ...tailSegments]);
     if (usageRing) usageRing.style.setProperty('--progress-deg', '360deg');
     if (resetTooltip) {
       resetTooltip.textContent =

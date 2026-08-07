@@ -14,22 +14,33 @@
 .saved-item {
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  margin-bottom: 10px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
   overflow: visible;
-  transition: border-color 0.2s;
+  transition:
+    border-color var(--transition),
+    background-color var(--transition);
 }
 
 .saved-item:hover {
   border-color: var(--border-strong);
 }
 
+/* A second .saved-item-header rule further down used to redeclare display,
+   align-items and padding, and carried the hover background. Merged here.
+   This is also the positioning context for the action cluster: anchored to
+   .saved-item instead, the cluster followed the card's bottom edge and ended
+   up floating over the body once a card was expanded. */
 .saved-item-header {
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  background-color: var(--bg-tertiary);
+  transition: background-color var(--transition);
 }
 
 .header-info {
@@ -42,9 +53,13 @@
 
 .saved-item-title {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   color: var(--text-primary);
   line-height: 1.35;
+  /* Full width now, so a long name wraps to a second line instead of being
+     truncated, the company name is the thing the list is scanned by. */
+  overflow-wrap: anywhere;
 }
 
 .saved-item-site-row,
@@ -65,17 +80,78 @@
   min-height: 32px;
 }
 
+/* Lifted out of the flow entirely. Hover-only actions styled with opacity:0
+   still reserve their full width, which quietly stole ~76px from every card
+   and forced the domain and status to compete for what was left. Absolutely
+   positioned, they cost nothing until they are shown. */
 .header-actions {
+  position: absolute;
+  right: var(--space-2);
+  /* Pinned to the metadata line rather than straddling it and the status row
+     above, which is what made the cluster look like it was floating loose. */
+  bottom: var(--space-2);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
+  z-index: 1;
 }
 
+/* Destructive and secondary actions stay quiet until the card is engaged.
+   Focus-within keeps them reachable by keyboard. The backdrop belongs on this
+   element, not the positioned wrapper: on the wrapper it never faded and left
+   a grey smudge on every resting card. */
 .header-actions-row {
+  opacity: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  /* Tight: the buttons carry their own padding, and a wide gap made a
+     four-icon cluster wider than the metadata line it sits beside. */
+  gap: 2px;
+  /* Raised, not recessed. */
+  background: var(--surface-raised);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  transition: opacity var(--transition);
+}
+
+/* While the status editor is open the controls are the point of the card, so
+   they stay put. Otherwise editing hid the focused pencil, focus-within went
+   false, and Save and Cancel faded out with it. */
+.saved-item[data-status-editing='true'] .header-actions-row {
+  opacity: 1;
+}
+
+.saved-item:hover .header-actions-row,
+.saved-item:focus-within .header-actions-row,
+.saved-item:hover .saved-status-edit-btn,
+.saved-item:focus-within .saved-status-edit-btn {
+  opacity: 1;
+}
+
+.saved-status-edit-btn {
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+@media (hover: none) {
+  .header-actions-row,
+  .saved-status-edit-btn {
+    opacity: 1;
+  }
+}
+
+/* A second .header-actions-row rule used to redeclare display and gap here,
+   overriding the block above. Merged. */
+
+/* Individual hover feedback, so it is obvious which one you are about to hit. */
+.header-actions-row button:hover {
+  background: var(--bg-hover-strong);
+}
+
+.header-actions-row .delete-saved-btn:hover {
+  background: var(--danger-bg);
+  color: var(--danger-color);
 }
 
 .header-actions-row .copy-btn,
@@ -83,19 +159,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   margin: 0;
-  flex: 0 0 34px;
+  flex: 0 0 30px;
+  border-radius: var(--radius-sm);
 }
 
+/* Domains are mono everywhere else in the panel; they were the odd one out. */
 .saved-item-site-link {
+  font-family: var(--font-mono);
   font-size: 12px;
   color: var(--text-secondary);
   text-decoration: none;
   line-height: 1.4;
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
 }
 
 .saved-item-site-link:hover {
@@ -128,31 +210,107 @@
   pointer-events: none;
 }
 
+/* The expanded prospect. This is written as <p><strong>Label:</strong> value</p>
+   rather than with the label/value classes used elsewhere, so the same
+   inverted hierarchy lived on here: the label was --text-primary at 600 while
+   the answer under it was the dimmer --text-tertiary. Same treatment, applied
+   to the element rather than a class. */
 .saved-item-body {
-  padding: 16px;
+  padding: var(--space-4);
   background-color: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .saved-item-body.hidden {
   display: none;
 }
 
-.saved-item-body p {
-  margin: 0 0 12px 0;
-  color: var(--text-tertiary);
+.saved-item-body p,
+.saved-item-body > div {
+  margin: 0 0 var(--space-4) 0;
+  /* The content is what the user opened the card to read. */
+  color: var(--text-primary);
 }
 
 .saved-item-body p:last-child {
   margin-bottom: 0;
 }
 
+/* Metadata: its own line, small, tracked, quiet. --text-secondary rather than
+   --text-muted because at 10px the muted token drops under 4.5:1. */
 .saved-item-body strong {
+  display: block;
+  margin: 0 0 2px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* A disclosure row. It was a button whose label flipped between "Show
+   history" and "Hide history", which changed its width on every click and is
+   the oldest interaction pattern on the page. The chevron carries the state. */
+.saved-item-body .saved-timeline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 0;
+  border: none;
+  background: none;
+  width: auto;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.saved-item-body .saved-timeline-btn:hover:not(:disabled) {
   color: var(--text-primary);
-  font-weight: 600;
-  margin-right: 4px;
+}
+
+.saved-item-body .saved-timeline-btn:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.saved-timeline-chevron {
+  flex-shrink: 0;
+  transition: transform var(--transition);
+}
+
+.saved-timeline-btn[aria-expanded='true'] .saved-timeline-chevron {
+  transform: rotate(180deg);
+}
+
+.saved-item-body .saved-timeline {
+  margin-top: var(--space-2);
+}
+
+.saved-item-divider {
+  height: 1px;
+  border: none;
+  background: var(--border-color);
+  margin: var(--space-4) 0;
+}
+
+.saved-persona-reason {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.saved-item-body .saved-url {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-color);
+  overflow-wrap: anywhere;
 }
 
 .saved-status-select {
@@ -228,7 +386,7 @@
 .saved-status-select:focus {
   outline: none;
   border-color: var(--accent-light);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .saved-status-select {
@@ -500,16 +658,6 @@
   pointer-events: none;
 }
 
-.saved-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
-  cursor: pointer;
-  background-color: var(--bg-tertiary);
-  transition: background-color 0.2s;
-}
-
 .saved-item-header:hover {
   background-color: var(--bg-hover-strong);
 }
@@ -528,36 +676,45 @@
   flex-wrap: wrap;
 }
 
+/* Status was a filled, bordered capsule per state, three saturated blobs in a
+   400px list, and the amber one turned brown. Now a dot plus a quiet label, the
+   same pattern the change feed uses, so state reads at a glance without the
+   list becoming a colour chart. */
 .saved-status-pill {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-height: 24px;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  border: 1px solid transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  /* Sentence case, not uppercase: tracked uppercase mono is the widest way to
+     set "Not contacted" and it squeezed the metadata line into an ellipsis. */
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
-.saved-status-pill--not_contacted {
-  color: var(--status-not-contacted-text);
-  border-color: var(--status-not-contacted-border);
-  background: var(--status-not-contacted-bg);
+.saved-status-pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  background: currentColor;
 }
 
-.saved-status-pill--contacted {
-  color: var(--status-contacted-text);
-  border-color: var(--status-contacted-border);
-  background: var(--status-contacted-bg);
+.saved-status-pill--not_contacted::before {
+  background: var(--text-muted);
 }
 
-.saved-status-pill--follow_up {
-  color: var(--status-follow-up-text);
-  border-color: var(--status-follow-up-border);
-  background: var(--status-follow-up-bg);
+.saved-status-pill--contacted::before {
+  background: var(--success-color);
+}
+
+.saved-status-pill--follow_up::before {
+  background: var(--severity-major);
 }
 
 .saved-item-header:active {
@@ -607,8 +764,8 @@
 
 .banner-upgrade-btn {
   padding: 8px 16px;
-  background-color: var(--accent-light);
-  color: white;
+  background-color: var(--accent-color);
+  color: var(--accent-on);
   border: none;
   border-radius: 6px;
   font-size: 13px;
@@ -619,9 +776,9 @@
 }
 
 .banner-upgrade-btn:hover {
-  background-color: var(--accent-color);
+  background-color: var(--accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 12px var(--accent-soft);
 }
 
 .banner-upgrade-btn:active {
@@ -671,4 +828,125 @@
   100% {
     transform: translateX(100%);
   }
+}
+
+/* ── Watch control ────────────────────────────────────────────────────
+   Was a default browser checkbox, which reads as a form control rather than
+   an on/off state and never matched the rest of the panel. */
+
+.saved-watch-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  /* Wrapping is safe again now that the action icons only appear on hover, and
+     they live in a separate column regardless. Clipping the timestamp to an
+     ellipsis lost real information for no layout benefit. */
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+}
+
+.saved-watch-state {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.saved-watch-toggle {
+  flex-shrink: 0;
+}
+
+.saved-watch-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 26px;
+  height: 15px;
+  border-radius: var(--radius-full);
+  background: var(--bg-hover-strong);
+  border: 1px solid var(--border-medium);
+  cursor: pointer;
+  transition:
+    background-color var(--transition),
+    border-color var(--transition);
+}
+
+.saved-watch-checkbox::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 11px;
+  height: 11px;
+  border-radius: var(--radius-full);
+  background: var(--text-secondary);
+  transition:
+    transform var(--transition),
+    background-color var(--transition);
+}
+
+.saved-watch-checkbox:checked {
+  background: var(--accent-color);
+  border-color: transparent;
+}
+
+.saved-watch-checkbox:checked::after {
+  transform: translateX(11px);
+  background: var(--accent-on);
+}
+
+/* ── Prospect metadata line ───────────────────────────────────────────
+   Status and watch state share one full-width row under the domain. The
+   status used to live in the right-hand action column, where it narrowed the
+   whole left column and forced the timestamp to wrap or clip even though it
+   only ever sat beside the first line. */
+
+/* Title and status share the top line: status is short and belongs with the
+   name it describes, and pairing them takes the card from four stacked lines
+   to three without crowding anything. */
+/* The status rides with the domain, not the title. Pairing it with the title
+   meant a long company name either truncated or bumped the status onto its own
+   line, so cards in the same list came out at different heights depending on
+   how long the name happened to be. The domain is short and predictable, so
+   this line is stable, and the title now gets the full width and is never
+   clipped, which matters most since it is what the user scans for. */
+.saved-item-site-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  min-width: 0;
+  /* The action icons are hover-only but keep their layout width (opacity, not
+     display), so this row has less space than the card suggests. Wrap rather
+     than clip: the status drops under the domain when it is genuinely tight. */
+  flex-wrap: wrap;
+}
+
+/* A domain is an identifier, truncating it to "vercel.…" is worse than
+   wrapping the status. It only shrinks past a readable floor as a last resort. */
+.saved-item-site-row .saved-item-site-link {
+  min-width: 11ch;
+  flex: 0 1 auto;
+}
+
+.saved-item-site-row .saved-item-badge-row {
+  width: auto;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.saved-item-site-row .saved-status-inline {
+  min-height: 0;
+}
+
+/* The action cluster is absolutely positioned against the bottom of the card,
+   so this margin is what separates it from the status on the line above. At
+   space-2 the two actually overlapped by a pixel. */
+.saved-item-meta {
+  display: flex;
+  align-items: center;
+  margin-top: var(--space-5);
+}
+
+.saved-item-meta .saved-watch-row {
+  min-width: 0;
 }

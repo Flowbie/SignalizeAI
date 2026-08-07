@@ -108,11 +108,18 @@ export function setupNavigationHandlers(): void {
         return;
       }
 
-      showToast(
-        result.changesDetected > 0
-          ? `Checked ${result.checked} account(s), ${result.changesDetected} change(s) found.`
-          : `Checked ${result.checked} account(s), nothing changed.`
-      );
+      if (result.changesDetected > 0) {
+        showToast(
+          `Checked ${result.checked} account(s), ${result.changesDetected} change(s) found.`
+        );
+      } else if (result.baselines > 0) {
+        // First check of an account can only record a starting point.
+        showToast(
+          `Baseline saved for ${result.baselines} account(s). Changes are reported from the next check.`
+        );
+      } else {
+        showToast(`Checked ${result.checked} account(s), nothing changed.`);
+      }
       void loadChangesFeed();
     });
   });

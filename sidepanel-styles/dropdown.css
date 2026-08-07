@@ -58,8 +58,11 @@
   height: 44px;
   font-size: 18px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-color), #22c55e);
-  color: white;
+  /* Identity, not an action: the accent is reserved for things you can click. */
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-secondary);
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -211,15 +214,15 @@
 }
 
 #plan-badge.badge-pro {
-  background: linear-gradient(135deg, #159a77, #0f766e);
-  color: #ffffff;
-  border-color: rgba(16, 185, 129, 0.55);
+  background: color-mix(in srgb, var(--success-color) 18%, var(--bg-secondary));
+  color: var(--success-color);
+  border-color: color-mix(in srgb, var(--success-color) 45%, transparent);
 }
 
 #plan-badge.badge-team {
-  background: linear-gradient(135deg, #1f4ed8, #1e3a8a);
-  color: #ffffff;
-  border-color: rgba(59, 130, 246, 0.58);
+  background: color-mix(in srgb, var(--brand-ai) 18%, var(--bg-secondary));
+  color: var(--brand-ai);
+  border-color: color-mix(in srgb, var(--brand-ai) 45%, transparent);
 }
 
 .badge-plus {

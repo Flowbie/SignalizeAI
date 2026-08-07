@@ -355,7 +355,7 @@
   padding: 4px 7px;
   border-radius: 6px;
   background: rgba(15, 23, 42, 0.92);
-  color: #fff;
+  color: var(--accent-on);
   font-size: 10px;
   font-weight: 600;
   line-height: 1;
@@ -504,6 +504,8 @@
   border-bottom: 1px solid var(--border-light);
   font-size: 12px;
   font-weight: 500;
-  color: var(--accent-light);
+  /* The accent tint behind this row already signals "working". Accent-on-its
+     own-tint cannot reach 4.5:1, so the status text itself stays neutral. */
+  color: var(--text-primary);
   animation: fadeIn 0.2s ease;
 }

@@ -1,96 +1,142 @@
+/*
+ * The "What changed" feed, the surface the whole monitoring product is sold
+ * on. It is scanned, not read: severity and change type must register before
+ * any words do, so both are encoded in form (stripe, badge) as well as text.
+ */
+
 #changes-view {
   background-color: var(--bg-secondary);
   color: var(--text-primary);
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
   border: 1px solid var(--border-color);
   max-width: 400px;
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
+  /* Inherit the panel's typography. This previously pinned system-ui, which
+     silently overrode the bundled face for the entire view. */
+  font-family: inherit;
 }
 
 .changes-meta {
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
   font-size: 12px;
   color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .changes-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-2);
 }
 
 .change-card {
+  position: relative;
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-left: 3px solid var(--border-strong);
-  border-radius: 8px;
-  padding: 14px 16px;
-  transition: border-color 0.2s;
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  transition:
+    border-color var(--transition),
+    transform var(--transition);
 }
 
 .change-card:hover {
   border-color: var(--border-strong);
+  transform: translateY(-1px);
 }
 
+/* Severity reads from the stripe before any text is parsed. Minor alerts keep
+   the neutral rail so only the ones that matter draw the eye. */
 .change-card--major {
-  border-left-color: var(--accent-color, #16a34a);
+  border-left-color: var(--severity-major);
+}
+
+.change-card--minor {
+  border-left-color: var(--border-color);
+}
+
+/* An alert nobody has looked at yet gets a dot. Without this, seen and unseen
+   alerts are visually identical and the feed loses its "what's new" job. */
+.change-card--unseen {
+  background-color: var(--bg-secondary);
+}
+
+.change-card--unseen .change-domain::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--accent-color);
+  vertical-align: middle;
 }
 
 .change-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .change-card-heading {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .change-badge {
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 3px 7px;
-  border-radius: 999px;
-  background-color: var(--bg-secondary);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background-color: transparent;
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
   white-space: nowrap;
 }
 
-.change-badge--pricing {
-  color: #16a34a;
-  border-color: #16a34a55;
+/* Change type is a category. Fully hue-coding each one put four saturated
+   chips into a 400px column and the card stopped reading as one object. The
+   chip itself is neutral; the category shows as a single small dot, which is
+   enough to tell them apart without adding four more colours to the panel. */
+.change-badge::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  vertical-align: middle;
 }
 
-.change-badge--hiring {
-  color: #2563eb;
-  border-color: #2563eb55;
+.change-badge--pricing::before {
+  background: var(--success-color);
 }
 
-.change-badge--messaging {
-  color: #d97706;
-  border-color: #d9770655;
+.change-badge--hiring::before {
+  background: var(--badge-hiring);
 }
 
-.change-badge--new_page {
-  color: #7c3aed;
-  border-color: #7c3aed55;
+.change-badge--messaging::before {
+  background: var(--warning-color);
+}
+
+.change-badge--new_page::before {
+  background: var(--accent-color);
 }
 
 .change-domain {
+  font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -98,87 +144,134 @@
 }
 
 .change-date {
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .change-summary {
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-3);
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--text-primary);
 }
 
 .change-diff {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
-  padding: 10px;
-  border-radius: 6px;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
 }
 
 .change-diff-row {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .change-diff-label {
   flex-shrink: 0;
-  width: 46px;
-  font-weight: 600;
-  color: var(--text-secondary);
+  width: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-top: 2px;
 }
 
 .change-diff-text {
   min-width: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--text-primary);
   word-break: break-word;
 }
 
+/* Before is receded, after is stated at full strength. Colouring the "after"
+   row green added a hue that competed with the accent for no extra meaning ,
+   the contrast step alone already reads as direction. */
 .change-diff-row--before .change-diff-text {
-  opacity: 0.7;
+  color: var(--text-muted);
+}
+
+.change-diff-row--after .change-diff-text {
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .change-opener {
-  margin: 0 0 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
   font-size: 12px;
-  font-style: italic;
-  line-height: 1.45;
-  color: var(--text-primary);
-  background-color: var(--bg-secondary);
-  border: 1px dashed var(--border-color);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  /* A flat accent tint over the slate ground turns murky. The accent does its
+     job as a rule on the edge; the fill stays neutral. */
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-left: 2px solid var(--accent-color);
 }
 
 .change-opener--missing {
-  font-style: normal;
-  opacity: 0.65;
+  background-color: transparent;
+  border: 1px dashed var(--border-color);
+  color: var(--text-muted);
 }
 
 .change-card-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
+/* These sit on a card, not in a toolbar, so they need a resting border to read
+   as controls at all, icon-only header buttons can get away without one. */
 .change-card-actions .secondary-btn {
   font-size: 12px;
-  padding: 5px 10px;
+  font-weight: 500;
+  padding: 6px 12px;
   width: auto;
   height: auto;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.change-card-actions .secondary-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* The opener is the thing the user came for; copying it is the primary act. */
+.change-card-actions .secondary-btn--primary {
+  background: var(--accent-color);
+  border-color: transparent;
+  color: var(--accent-on);
+  font-weight: 600;
+}
+
+.change-card-actions .secondary-btn--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: transparent;
+  color: var(--accent-on);
 }
 
 .change-timeline {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-color);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-light);
 }
 
 .change-timeline-list {
@@ -187,24 +280,27 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .change-timeline-item {
   display: flex;
-  gap: 10px;
+  gap: var(--space-2);
   font-size: 12px;
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
 .change-timeline-item--failed {
-  opacity: 0.6;
+  color: var(--text-muted);
 }
 
 .change-timeline-date {
   flex-shrink: 0;
   width: 56px;
-  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
 }
 
 .change-timeline-detail {
@@ -214,17 +310,17 @@
 
 .change-timeline-empty,
 .change-timeline-locked {
-  margin: 6px 0 0;
+  margin: var(--space-1) 0 0;
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 /* Watch toggle on saved prospect rows */
 .saved-watch-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 6px;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
   font-size: 11px;
   color: var(--text-secondary);
 }
@@ -232,7 +328,7 @@
 .saved-watch-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
   cursor: pointer;
   user-select: none;
 }
@@ -240,24 +336,71 @@
 .saved-watch-toggle input {
   cursor: pointer;
   margin: 0;
+  accent-color: var(--accent-color);
 }
 
 .saved-watch-state--stalled {
-  color: #d97706;
+  color: var(--warning-color);
 }
 
 .menu-item-badge {
   margin-left: auto;
   min-width: 18px;
   padding: 1px 6px;
-  border-radius: 999px;
-  background-color: var(--accent-color, #16a34a);
-  color: #fff;
+  border-radius: var(--radius-full);
+  background-color: var(--accent-color);
+  color: var(--accent-on);
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   text-align: center;
 }
 
 .menu-item-badge.hidden {
   display: none;
+}
+
+/* ── Day grouping ─────────────────────────────────────────────────────
+   The feed was one flat reverse-chronological list, so a batch that landed
+   this morning looked the same as one from last week. */
+
+.changes-day {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* No leading gap: the first heading sits directly under the meta line. */
+.changes-day:first-child {
+  margin-top: 0;
+}
+
+/* A rule that fills whatever the label and count leave, so the heading reads
+   as a divider rather than as another row of content. */
+.changes-day::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-light);
+}
+
+.changes-day-count {
+  order: 3;
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-align: center;
 }

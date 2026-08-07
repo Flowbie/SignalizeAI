@@ -69,26 +69,29 @@
   transition: all 0.2s ease;
 }
 
+/* Pro is the recommended tier and is listed first, so it carries the accent.
+   Team previously had the filled accent while Pro was neutral, which made the
+   higher tier shout louder than the one being recommended, and two filled
+   buttons stacked compete for the same click. Team is now a tinted outline. */
 .modal-footer .primary-btn {
-  background: var(--text-primary);
-  color: var(--bg-primary);
+  background: var(--accent-color);
+  color: var(--accent-on);
 }
 
 .modal-footer .primary-btn:hover {
+  background: var(--accent-hover);
   transform: translateY(-1px);
-  opacity: 0.9;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .modal-footer .team-btn {
-  background: var(--accent-light);
-  color: #fff;
+  background: var(--accent-soft);
+  color: var(--accent-color);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 35%, transparent);
 }
 
 .modal-footer .team-btn:hover {
-  background: var(--accent-color);
+  background: color-mix(in srgb, var(--accent-color) 20%, transparent);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
 }
 
 .modal-footer .secondary-btn {
