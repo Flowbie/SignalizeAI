@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "SignalizeAI",
+  "name": "SignalizeAI: AI Prospect Research & Change Alerts",
   "version": "5.5.0",
   "description": "AI sales prospecting. Research any company in seconds, then get alerts when their pricing, hiring or messaging changes.",
   "permissions": ["activeTab", "sidePanel", "storage", "tabs", "scripting", "alarms"],
