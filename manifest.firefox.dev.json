@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SignalizeAI",
   "version": "5.5.0",
-  "description": "Find the right angle to sell to any company in seconds. Get clear strategy, targeting, and outreach you can use without guessing.",
+  "description": "AI sales prospecting. Research any company in seconds, then get alerts when their pricing, hiring or messaging changes.",
   "permissions": ["activeTab", "storage", "tabs", "scripting", "alarms"],
   "host_permissions": [
     "https://*.supabase.co/*",
