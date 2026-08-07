@@ -277,17 +277,6 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
 
     ${buildSavedOutreachMarkup(item)}
 
-    <hr class="saved-item-divider" />
-
-    <div class="saved-timeline-section">
-      <button class="saved-timeline-btn" type="button" aria-expanded="false">
-        <svg class="saved-timeline-chevron" viewBox="0 0 24 24" width="14" height="14"
-          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-          stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        <span>History</span>
-      </button>
-      <div class="saved-timeline change-timeline hidden"></div>
-    </div>
 
     <hr class="saved-item-divider" />
 
@@ -327,6 +316,18 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
         `
         : ''
     }
+
+    <hr class="saved-item-divider" />
+
+    <div class="saved-timeline-section">
+      <button class="saved-timeline-btn" type="button" aria-expanded="false">
+        <svg class="saved-timeline-chevron" viewBox="0 0 24 24" width="14" height="14"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        <span>History</span>
+      </button>
+      <div class="saved-timeline change-timeline hidden"></div>
+    </div>
   </div>
 `;
 
