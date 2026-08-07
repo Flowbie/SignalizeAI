@@ -39,10 +39,11 @@
   text-align: right;
   max-width: 65%;
   word-break: break-word;
+  /* Quotas and limits are figures, keep them aligned as the plan changes. */
+  font-variant-numeric: tabular-nums;
 }
 
 .user-email-text {
-  opacity: 0.8;
   margin-top: 5px;
 }
 

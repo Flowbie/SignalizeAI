@@ -1,79 +1,99 @@
-# SignalizeAI Extension
+# SignalizeAI
 
-SignalizeAI is the browser extension for turning public company websites into usable prospect records.
+**Know when your target accounts change.**
 
-Current version: `5.4.1`
+[![CI](https://github.com/SignalizeAI/SignalizeAI/actions/workflows/ci.yml/badge.svg)](https://github.com/SignalizeAI/SignalizeAI/actions/workflows/ci.yml)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-featured-4285F4.svg)](https://signalizeai.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Manifest V3](https://img.shields.io/badge/manifest-v3-brightgreen.svg)](./manifest.chrome.release.json)
+
+SignalizeAI turns any company website into a sales brief, then keeps watching it
+and tells you what changed since last time.
+
+Prospecting tools tell you who a company is once. The useful signal is the
+_delta_: they published a pricing page, they opened an enterprise tier, they
+started hiring platform engineers. That is the moment worth an email, and it is
+invisible unless something re-reads the site for you.
+
+**[Install from the Chrome Web Store](https://signalizeai.org)** ·
+[Website](https://signalizeai.org) ·
+[Pricing](https://signalizeai.org/pricing) ·
+[Privacy](https://signalizeai.org/privacy)
+
+---
+
+## Why
+
+A sales brief goes stale the moment you generate it. Re-running the same
+research by hand every week does not scale past a handful of accounts, so in
+practice nobody does it, and the trigger to reach out gets missed.
+
+SignalizeAI takes the snapshot once, then re-reads on a schedule and diffs
+against what it saw last time. You get told only the difference.
 
 ## What it does
 
-- Prospects the active website or any URL through Quick Website Check
-- Shows a tabbed insights flow:
-  - Strategy
-  - Emails
-  - Snapshot
-- Generates:
-  - what they do
-  - company overview
-  - value proposition
-  - target customer
-  - sales readiness
-  - best persona recommendation
-  - goal
-  - outreach angle
-- Generates email content:
-  - 3 outreach approaches
-  - 1 recommended email
-  - follow-up emails
-- Saves prospects to Supabase
-- Shows saved prospects instead of re-prospecting the same saved website by default
-- Opens saved or unsaved analyses on the website through `Open in website`
-- Syncs with the website saved prospects workspace at `/prospects`
-- Supports Batch Prospecting:
-  - CSV upload
-  - pasted URLs
-  - multi-select save
-  - bulk outreach + follow-up generation
-  - CSV / Excel export
-  - compact batch analysis mode for faster large runs
-  - resilient fallback email generation when AI responses fail
+**Prospect any site.** Reads the page you are on, or any URL you paste, and
+produces what they do, company overview, value proposition, target customer,
+sales readiness, and the persona most worth contacting.
 
-## Saved Prospect Features
+**Write the outreach.** Three outreach approaches, one recommended email, and
+follow-ups, all grounded in the brief rather than a template.
 
-- search and filter
-- prospect status tracking
-- copy / open in website / delete actions
-- inline status editing
-- shared data with the website prospect page
-- live reflection on the website saved prospects workspace
+**Watch for change.** Saving a prospect puts it under watch. A background sweep
+re-reads watched domains and surfaces only what moved:
 
-## Website Sync
+| Signal    | Why it matters                                           |
+| --------- | -------------------------------------------------------- |
+| Pricing   | New tier, price move, or a pricing page appearing at all |
+| Hiring    | Roles added to the careers page                          |
+| Messaging | The homepage headline or positioning was rewritten       |
+| New pages | A section that did not exist on the last read            |
 
-The extension syncs with `signalizeai.org` for:
+Each alert carries the before and after, plus a suggested opener you can copy.
 
-- auth state
-- sign-out state
-- theme changes
-- prospect status updates
-- prospect content refreshes
-- install detection
+**Work in bulk.** CSV upload or pasted URLs, multi-select save, bulk outreach
+generation, CSV and Excel export.
+
+## How change detection works
+
+The sweep runs in the background service worker, driven by `chrome.alarms`.
+Each pass fetches the homepage, plus the pricing and careers pages when it can
+find them, extracts a structured snapshot, and compares it to the last stored
+one.
+
+Two design decisions worth calling out, because they are the ones people ask
+about:
+
+**Fetching happens in your browser, not on a server.** The Cloudflare Worker has
+no crawler. Workers also have no `DOMParser`, so a server-side implementation
+would mean maintaining a second extractor that drifts from this one. More
+importantly, fetching sites you are not visiting from our infrastructure would
+contradict the privacy policy, which says content is read from the page you are
+on. The cost of this choice is that checks only happen while your browser is
+running, which is what the action badge is for.
+
+**The differ is tuned to stay quiet.** Whitespace, reordered navigation,
+tracking parameters, and a page that suddenly reports no prices at all (almost
+always a failed render, not a real change) are all suppressed. A monitoring tool
+that cries wolf gets muted in a week.
+
+Check frequency is the paid lever: Free weekly, Pro every 48 hours, Team daily.
 
 ## Tech stack
 
-- Manifest V3
-- TypeScript
-- esbuild
-- Supabase auth + storage
-- Cloudflare Workers backend
+Manifest V3 · TypeScript · esbuild · Supabase (auth and storage) · Cloudflare
+Workers backend
 
 ## Local development
 
-1. Install dependencies
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-2. Create `.env.local`
+Create `.env.local`:
 
 ```env
 VITE_SUPABASE_URL=your_supabase_url
@@ -81,64 +101,76 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 API_ENV=dev
 ```
 
-`API_ENV=dev` points the extension to:
+`API_ENV=dev` points the extension at `https://dev-api.signalizeai.org` and
+`http://localhost:3000`.
 
-- `https://dev-api.signalizeai.org`
-- `http://localhost:3000`
-
-3. Choose a manifest before building
-
-Chrome local:
+Pick a manifest, then build:
 
 ```bash
-cp manifest.chrome.dev.json manifest.json
-npm run build
+# Chrome
+cp manifest.chrome.dev.json manifest.json && npm run build
+
+# Firefox
+cp manifest.firefox.dev.json manifest.json && npm run build
 ```
 
-Firefox local:
+Load it:
 
-```bash
-cp manifest.firefox.dev.json manifest.json
-npm run build
-```
+- Chrome: load this directory as an unpacked extension at `chrome://extensions`
+- Firefox: load this directory as a temporary add-on
 
-4. Load the extension
+> The manifest lives at the repository root, not in `extension/`. `extension/`
+> holds build output only.
 
-- Chrome: load `SignalizeAI/` as an unpacked extension
-- Firefox: load `SignalizeAI/` as a temporary add-on
+### Build commands
 
-## Build commands
+| Command                     | What it does                             |
+| --------------------------- | ---------------------------------------- |
+| `npm run build`             | Builds using the current `manifest.json` |
+| `npm run build:chrome`      | Production Chrome build                  |
+| `npm run build:firefox`     | Production Firefox build                 |
+| `npm run build:chrome:dev`  | Dev Chrome manifest, then build          |
+| `npm run build:firefox:dev` | Dev Firefox manifest, then build         |
+| `npm run dev`               | Chromium watch flow                      |
+| `npm run dev:firefox`       | Firefox watch flow                       |
 
-- `npm run build`
-  - builds using the current `manifest.json`
-- `npm run build:chrome`
-  - production Chrome build
-- `npm run build:firefox`
-  - production Firefox build
-- `npm run build:chrome:dev`
-  - dev Chrome manifest + build
-- `npm run build:firefox:dev`
-  - dev Firefox manifest + build
-- `npm run dev`
-  - Chromium watch flow
-- `npm run dev:firefox`
-  - Firefox watch flow
+### Checks
 
-## Checks
+| Command                | What it does                                                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run lint`         | ESLint                                                                                                                                                                   |
+| `npm run test`         | Unit tests for the differ, plus a load test that replays real captured HTML from three production sites to confirm it fires on genuine changes and stays silent on noise |
+| `npm run format`       | Prettier write                                                                                                                                                           |
+| `npm run format:check` | Prettier check                                                                                                                                                           |
 
-- `npm run lint`
-- `npm run format`
-- `npm run format:check`
+## Gotchas
 
-## Important notes
+- Production manifests only inject the website bridge on `signalizeai.org`. Dev
+  manifests also allow localhost syncing.
+- `build:chrome` and `build:firefox` **overwrite `manifest.json`**. Re-copy the
+  right manifest before rebuilding if you switch between prod and local.
+- `src/config.ts` is generated by `build.ts` and is not committed. Release builds
+  set `BUILD_TARGET=release`, which pins the API to production regardless of
+  `API_ENV`, and the build aborts if the generated config points anywhere else.
+- Every build clears `extension/*.js` first, so content-hashed chunks from an
+  earlier (possibly dev-targeted) build cannot end up in a release package.
 
-- Production manifests only inject the website bridge on `signalizeai.org`
-- Dev manifests also allow localhost syncing with the website
-- `npm run build:chrome` and `npm run build:firefox` overwrite `manifest.json`
-- If you switch between prod and local testing, re-copy the correct manifest before rebuilding
+## Contributing
+
+Contributions are welcome. Start with
+[CONTRIBUTING.md](./CONTRIBUTING.md), and look for issues labelled
+[good first issue](https://github.com/SignalizeAI/SignalizeAI/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+
+Please read the [Code of Conduct](./CODE_OF_CONDUCT.md) before opening a pull
+request, and [SECURITY.md](./SECURITY.md) before reporting anything
+security-related.
 
 ## Support
 
-- Website: https://signalizeai.org
-- Privacy: https://signalizeai.org/privacy
-- Email: support@signalizeai.org
+- Website: <https://signalizeai.org>
+- Contact: <https://signalizeai.org/contact>
+- Email: <support@signalizeai.org>
+
+## License
+
+[MIT](./LICENSE)

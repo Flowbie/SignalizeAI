@@ -2,6 +2,11 @@ import { QUOTA_TTL } from './constants.js';
 import { supabase } from './supabase.js';
 import { state } from './state.js';
 import { API_BASE_URL } from '../config.js';
+import {
+  FALLBACK_DAILY_ANALYSES,
+  FALLBACK_MAX_SAVED,
+  FALLBACK_WATCH_LIMITS,
+} from '../watch/plans.js';
 
 interface QuotaResponse {
   plan: string;
@@ -10,13 +15,44 @@ interface QuotaResponse {
   daily_limit: number;
   max_saved: number;
   total_saved: number;
+  max_watched?: number;
+  total_watched?: number;
+  check_interval_hours?: number;
+}
+
+/**
+ * Applied whenever the Worker is unreachable. These must match the Free plan,
+ * otherwise an outage shows the wrong cap and blocks saving.
+ *
+ * remainingToday stays null on purpose: it is the gate every analysis path
+ * checks, and a stale 0 would lock the user out for the length of an outage we
+ * caused. usedToday is display-only, so the last figure we did fetch is kept —
+ * a stale count reads better than collapsing the banner to "Usage unavailable".
+ */
+function applyQuotaFallbacks(): void {
+  state.currentPlan = state.currentPlan || 'free';
+  state.remainingToday = null;
+  state.dailyLimitFromAPI = state.dailyLimitFromAPI ?? FALLBACK_DAILY_ANALYSES;
+  state.maxSavedLimit = state.maxSavedLimit ?? FALLBACK_MAX_SAVED;
+  state.totalSavedCount = state.totalSavedCount ?? 0;
+  state.maxWatchedLimit = state.maxWatchedLimit ?? FALLBACK_WATCH_LIMITS.maxWatched;
+  state.totalWatchedCount = state.totalWatchedCount ?? 0;
+  state.checkIntervalHours = state.checkIntervalHours ?? FALLBACK_WATCH_LIMITS.checkIntervalHours;
+}
+
+/** "weekly" reads better than "every 168 hours" in a banner. */
+export function formatCheckInterval(hours: number): string {
+  if (!Number.isFinite(hours) || hours <= 0) return 'weekly';
+  if (hours >= 168) return 'weekly';
+  if (hours >= 48) return 'every 48h';
+  if (hours >= 24) return 'daily';
+  return `every ${Math.round(hours)}h`;
 }
 
 export async function loadQuotaFromAPI(force = false): Promise<void> {
   if (!force && Date.now() - state.lastQuotaFetch < QUOTA_TTL) return;
   const { data } = await supabase.auth.getSession();
   if (!data?.session) return;
-  state.lastQuotaFetch = Date.now();
 
   const jwt = data.session.access_token;
 
@@ -29,12 +65,7 @@ export async function loadQuotaFromAPI(force = false): Promise<void> {
 
     if (!res.ok) {
       console.warn('Quota fetch failed:', res.status);
-      state.currentPlan = state.currentPlan || 'free';
-      state.remainingToday = null;
-      state.usedToday = null;
-      state.dailyLimitFromAPI = state.dailyLimitFromAPI ?? 5;
-      state.maxSavedLimit = state.maxSavedLimit ?? 3;
-      state.totalSavedCount = state.totalSavedCount ?? 0;
+      applyQuotaFallbacks();
       renderQuotaBanner();
       return;
     }
@@ -42,24 +73,55 @@ export async function loadQuotaFromAPI(force = false): Promise<void> {
     const dataJson = (await res.json()) as QuotaResponse;
 
     if (dataJson.plan) {
+      // Only a fetch that actually produced figures earns the cache window.
+      // Stamping before the request meant one failure suppressed every
+      // non-forced retry for the whole TTL, including reopening the panel.
+      state.lastQuotaFetch = Date.now();
       state.currentPlan = dataJson.plan;
       state.remainingToday = dataJson.remaining_today;
       state.usedToday = dataJson.used_today;
       state.dailyLimitFromAPI = dataJson.daily_limit;
       state.maxSavedLimit = dataJson.max_saved ?? 0;
       state.totalSavedCount = dataJson.total_saved ?? 0;
+      state.maxWatchedLimit = dataJson.max_watched ?? FALLBACK_WATCH_LIMITS.maxWatched;
+      state.totalWatchedCount = dataJson.total_watched ?? 0;
+      state.checkIntervalHours =
+        dataJson.check_interval_hours ?? FALLBACK_WATCH_LIMITS.checkIntervalHours;
 
       renderQuotaBanner();
     }
   } catch (e) {
     console.warn('Quota fetch failed', e);
-    state.currentPlan = state.currentPlan || 'free';
-    state.remainingToday = null;
-    state.usedToday = null;
-    state.dailyLimitFromAPI = state.dailyLimitFromAPI ?? 5;
-    state.maxSavedLimit = state.maxSavedLimit ?? 3;
-    state.totalSavedCount = state.totalSavedCount ?? 0;
+    applyQuotaFallbacks();
     renderQuotaBanner();
+  }
+}
+
+/**
+ * Render the counters as discrete segments rather than one string.
+ *
+ * As a single "a • b • c" string the browser could only break at spaces, so a
+ * narrow panel split counters mid-phrase ("4 /" on one line, "200 saved" on the
+ * next). Each segment is its own non-breaking unit, so the row wraps between
+ * counters and never inside one.
+ */
+function renderQuotaSegments(el: HTMLElement, segments: string[]): void {
+  el.textContent = '';
+  for (const segment of segments) {
+    const span = document.createElement('span');
+    span.className = 'quota-seg';
+    // Split "2 / 50 prospects" into its figure and its label so the number can
+    // carry the emphasis and the label can recede.
+    const match = segment.match(/^(\S+(?:\s*\/\s*\S+)?)\s+(.*)$/);
+    if (match) {
+      const value = document.createElement('b');
+      value.className = 'quota-seg-value';
+      value.textContent = match[1];
+      span.append(value, ' ' + match[2]);
+    } else {
+      span.textContent = segment;
+    }
+    el.appendChild(span);
   }
 }
 
@@ -85,19 +147,43 @@ export function renderQuotaBanner(): void {
   const usedPercent = Math.max(0, Math.min(100, Math.round((used / totalLimit) * 100)));
   const usedDegrees = Math.round((usedPercent / 100) * 360);
 
-  const savedText = `${Number(state.totalSavedCount ?? 0)} / ${Number(
+  // Watched accounts come first: under a monitoring model that is the number
+  // the user should see every time the panel opens.
+  const watchedText = `${Number(state.totalWatchedCount ?? 0)} / ${Number(
+    state.maxWatchedLimit ?? 0
+  )} watched`;
+
+  const savedOnlyText = `${Number(state.totalSavedCount ?? 0)} / ${Number(
     state.maxSavedLimit ?? 0
   )} saved`;
+  const tailSegments = [watchedText, savedOnlyText];
 
   if (state.remainingToday === null) {
-    text.textContent = `Usage unavailable • ${savedText}`;
-    if (usageRing) usageRing.style.setProperty('--progress-deg', '0deg');
-    if (resetTooltip) resetTooltip.textContent = 'Daily quota resets at 00:00 UTC';
+    // A failed refresh nulls the gate but keeps the last usedToday we fetched,
+    // so show that rather than blanking a counter we do know.
+    renderQuotaSegments(text, [
+      state.usedToday === null ? 'Usage unavailable' : `${used} / ${totalLimit} prospects`,
+      ...tailSegments,
+    ]);
+    if (usageRing)
+      usageRing.style.setProperty(
+        '--progress-deg',
+        state.usedToday === null ? '0deg' : `${usedDegrees}deg`
+      );
+    if (resetTooltip) {
+      resetTooltip.textContent =
+        `Watched accounts are re-checked ${formatCheckInterval(state.checkIntervalHours)}. ` +
+        'Daily quota resets at 00:00 UTC';
+    }
     btn.classList.add('hidden');
   } else if (Number(state.remainingToday ?? 0) > 0) {
-    text.textContent = `${used} / ${totalLimit} prospects • ${savedText}`;
+    renderQuotaSegments(text, [`${used} / ${totalLimit} prospects`, ...tailSegments]);
     if (usageRing) usageRing.style.setProperty('--progress-deg', `${usedDegrees}deg`);
-    if (resetTooltip) resetTooltip.textContent = 'Daily quota resets at 00:00 UTC';
+    if (resetTooltip) {
+      resetTooltip.textContent =
+        `Watched accounts are re-checked ${formatCheckInterval(state.checkIntervalHours)}. ` +
+        'Daily quota resets at 00:00 UTC';
+    }
 
     if (state.currentPlan === 'team') {
       btn.classList.add('hidden');
@@ -106,9 +192,13 @@ export function renderQuotaBanner(): void {
       btn.textContent = 'Upgrade';
     }
   } else {
-    text.textContent = `Daily limit reached • ${savedText}`;
+    renderQuotaSegments(text, ['Daily limit reached', ...tailSegments]);
     if (usageRing) usageRing.style.setProperty('--progress-deg', '360deg');
-    if (resetTooltip) resetTooltip.textContent = 'Daily quota resets at 00:00 UTC';
+    if (resetTooltip) {
+      resetTooltip.textContent =
+        `Watched accounts are re-checked ${formatCheckInterval(state.checkIntervalHours)}. ` +
+        'Daily quota resets at 00:00 UTC';
+    }
     if (state.currentPlan === 'team') {
       btn.classList.add('hidden');
     } else {

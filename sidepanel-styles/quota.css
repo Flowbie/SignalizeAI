@@ -1,10 +1,20 @@
+/* The counter ticks up as prospects are used; tabular figures stop the label
+   from shifting on every increment. */
+#quota-text {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fixed bottom bar. The counter string grows with the plan
+   ("2 / 50 prospects · 0 / 3 watched · 4 / 200 saved"), so the layout has to
+   survive a long left side without ever clipping the action on the right. */
 .quota-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-3);
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
-  padding: 12px 20px;
+  padding: 10px 16px;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -19,13 +29,50 @@
 }
 
 #quota-text {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  /* Centred so a counter that wraps to a second line sits under the middle of
+     the first rather than hanging off the left edge. */
+  justify-content: center;
+  /* Wide enough to read as separate counters without needing bullet
+     characters, which orphan at the start of a line when the row wraps. */
+  column-gap: var(--space-3);
+  row-gap: 2px;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
+  line-height: 1.35;
+}
+
+/* Each counter is one unbreakable unit, so a narrow panel moves "4 / 200
+   saved" to the next line whole instead of splitting it mid-phrase. */
+.quota-seg {
+  white-space: nowrap;
+}
+
+.quota-seg-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .quota-left {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  /* min-width:0 lets this column actually shrink; without it a flex item
+     refuses to go below its content width and pushes the button off-screen. */
+  min-width: 0;
   overflow: visible;
+}
+
+/* The button is the one thing that must never be cut. */
+.quota-right {
+  flex-shrink: 0;
 }
 
 .quota-reset-wrap {
@@ -92,8 +139,8 @@
 }
 
 .upgrade-btn {
-  background: var(--accent-light);
-  color: #ffffff;
+  background: var(--accent-color);
+  color: var(--accent-on);
   border: none;
   border-radius: 8px;
   padding: 8px 14px;
@@ -107,7 +154,7 @@
 .upgrade-btn:hover {
   background: var(--accent-color);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 4px 12px var(--accent-soft);
 }
 
 .upgrade-btn:active {
@@ -137,12 +184,18 @@
 
 .badge-team {
   background: var(--accent-color);
-  color: var(--text-primary);
+  color: var(--accent-on);
 }
 
-.quota-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* A second .quota-left rule used to live here with flex-direction: column.
+   It contradicted the layout above and was only ever neutralised by an inline
+   flex-direction:row on the element, so removing the inline styles exposed it
+   and dropped the usage ring onto its own line. Merged into the rule above. */
+
+/* The banner is position:fixed, so it sits on top of the page rather than in
+   the flow. Nothing reserved space for it, which left the last row of a
+   scrolled list permanently hidden underneath. Reserve it only while the
+   banner is actually shown. */
+body:has(#quota-banner:not(.hidden)) {
+  padding-bottom: 72px;
 }

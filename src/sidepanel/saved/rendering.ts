@@ -12,6 +12,9 @@ import { updateDeleteState, updateSelectAllIcon } from './selection.js';
 import { showUndoToast } from './delete.js';
 import { buildSavedOutreachMarkup } from './outreach-render.js';
 import { splitPersistedOutreachAngle } from '../analysis/outreach-angle.js';
+import { isWatchStalled, setWatchEnabled } from './watch.js';
+import { fetchSnapshotTimeline } from '../changes/data.js';
+import { renderTimelineInto } from '../changes/render.js';
 
 const exportToggle = document.getElementById('export-menu-toggle');
 const filterToggle = document.getElementById('filter-toggle');
@@ -31,6 +34,9 @@ interface SavedItem {
   recommended_outreach_goal?: string;
   recommended_outreach_angle?: string;
   prospect_status?: string;
+  watch_enabled?: boolean | null;
+  last_checked_at?: string | null;
+  check_failure_count?: number | null;
   [key: string]: any;
 }
 
@@ -160,19 +166,9 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
             ? `<a href="${item.url}" target="_blank" class="saved-item-site-link">${item.domain || item.url}</a>`
             : `<div class="saved-item-site-link">${item.domain || '—'}</div>`
         }
-      </div>
-    </div>
-
-    <div class="header-actions">
-      <div class="saved-item-badge-row">
+        <div class="saved-item-badge-row">
         <div class="saved-status-inline">
           <span class="saved-status-pill saved-status-pill--${currentStatus}">${formatStatusLabel(currentStatus)}</span>
-          <button class="saved-status-edit-btn" title="Edit status" aria-label="Edit status">
-            <svg viewBox="0 0 24 24" class="copy-icon">
-              <path d="M12 20h9"></path>
-              <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z"></path>
-            </svg>
-          </button>
           <div class="saved-status-editor hidden">
             <div class="saved-status-select-shell">
               <button class="saved-status-select" type="button" aria-label="Status" aria-expanded="false">
@@ -193,7 +189,34 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
           </div>
         </div>
       </div>
+      </div>
+      <div class="saved-item-meta">
+        <div class="saved-watch-row">
+        <label class="saved-watch-toggle" title="Re-check this account and alert me when it changes">
+          <input type="checkbox" class="saved-watch-checkbox" ${item.watch_enabled ? 'checked' : ''} />
+          <span>Watch</span>
+        </label>
+        ${
+          // Only the failure is worth the space. "Checked 2h ago" and "Not
+          // watched" restate what the toggle already shows, and the line was
+          // long enough to run under the hover actions. A site that can no
+          // longer be checked is not redundant, so that one stays.
+          isWatchStalled(item)
+            ? '<span class="saved-watch-state saved-watch-state--stalled">Cannot check this site</span>'
+            : ''
+        }
+        </div>
+      </div>
+    </div>
+
+    <div class="header-actions">
       <div class="header-actions-row">
+        <button class="saved-status-edit-btn" title="Edit status" aria-label="Edit status">
+          <svg viewBox="0 0 24 24" class="copy-icon">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z"></path>
+          </svg>
+        </button>
         <button class="copy-btn copy-saved-btn" title="Copy prospect data">
           <svg viewBox="0 0 24 24" class="copy-icon">
             <rect x="9" y="9" width="13" height="13" rx="2"></rect>
@@ -242,34 +265,35 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
 
   <div class="saved-item-body hidden">
     <p>
-      <strong>Goal:</strong>
+      <strong>Goal</strong>
       ${item.recommended_outreach_goal || '—'}
     </p>
     <div>
-      <strong>Outreach angle:</strong>
+      <strong>Outreach angle</strong>
       ${angleMarkup}
     </div>
 
-    <hr style="margin:8px 0; opacity:0.3" />
+    <hr class="saved-item-divider" />
 
     ${buildSavedOutreachMarkup(item)}
 
-    <hr style="margin:8px 0; opacity:0.3" />
 
-    <p><strong>What they do:</strong> ${item.what_they_do || '—'}</p>
-    <p style="opacity:0.85">
-      <strong>Company overview:</strong>
+    <hr class="saved-item-divider" />
+
+    <p><strong>What they do</strong> ${item.what_they_do || '—'}</p>
+    <p>
+      <strong>Company overview</strong>
       ${escapedDescription}
     </p>
-    <p><strong>Value proposition:</strong> ${item.value_proposition || '—'}</p>
-    <p><strong>Target customer:</strong> ${item.target_customer || '—'}</p>
-    <p><strong>Sales readiness:</strong> ${item.sales_readiness_score ?? '—'}</p>
+    <p><strong>Value proposition</strong> ${item.value_proposition || '—'}</p>
+    <p><strong>Target customer</strong> ${item.target_customer || '—'}</p>
+    <p><strong>Sales readiness</strong> ${item.sales_readiness_score ?? '—'}</p>
     <p>
-      <strong>Best persona recommendation:</strong> ${item.best_sales_persona || '—'}
+      <strong>Best persona recommendation</strong> ${item.best_sales_persona || '—'}
       ${
         item.best_sales_persona_reason
           ? `<br />
-      <span style="opacity:0.7; font-size:13px">
+      <span class="saved-persona-reason">
         (${item.best_sales_persona_reason})
       </span>`
           : ''
@@ -280,7 +304,7 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
       item.url
         ? `
           <p>
-            <strong>URL:</strong>
+            <strong>URL</strong>
             <a
               href="${item.url}"
               target="_blank"
@@ -292,8 +316,68 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
         `
         : ''
     }
+
+    <hr class="saved-item-divider" />
+
+    <div class="saved-timeline-section">
+      <button class="saved-timeline-btn" type="button" aria-expanded="false">
+        <svg class="saved-timeline-chevron" viewBox="0 0 24 24" width="14" height="14"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        <span>History</span>
+      </button>
+      <div class="saved-timeline change-timeline hidden"></div>
+    </div>
   </div>
 `;
+
+  const watchCheckbox = wrapper.querySelector<HTMLInputElement>('.saved-watch-checkbox');
+  const watchStateEl = wrapper.querySelector<HTMLElement>('.saved-watch-state');
+
+  watchCheckbox?.addEventListener('click', (e: MouseEvent) => e.stopPropagation());
+  watchCheckbox?.addEventListener('change', async (e: Event) => {
+    e.stopPropagation();
+    const nextEnabled = watchCheckbox.checked;
+    watchCheckbox.disabled = true;
+
+    const applied = await setWatchEnabled(item.id, nextEnabled);
+    watchCheckbox.disabled = false;
+
+    if (!applied) {
+      watchCheckbox.checked = !nextEnabled;
+      return;
+    }
+
+    item.watch_enabled = nextEnabled;
+    if (nextEnabled) item.check_failure_count = 0;
+    // The only thing this line ever says now is "cannot check this site", and
+    // re-enabling resets the failure count, so the warning goes away with it
+    // rather than being rewritten into text the toggle already conveys.
+    if (watchStateEl && nextEnabled) watchStateEl.remove();
+  });
+
+  const timelineBtn = wrapper.querySelector<HTMLButtonElement>('.saved-timeline-btn');
+  const timelineEl = wrapper.querySelector<HTMLElement>('.saved-timeline');
+
+  timelineBtn?.addEventListener('click', async (e: MouseEvent) => {
+    e.stopPropagation();
+    if (!timelineEl) return;
+
+    // A disclosure, not a label swap: the chevron carries the state and the
+    // label stays put, so the control does not change width as you use it.
+    if (!timelineEl.classList.contains('hidden')) {
+      timelineEl.classList.add('hidden');
+      timelineBtn.setAttribute('aria-expanded', 'false');
+      return;
+    }
+
+    timelineBtn.disabled = true;
+    timelineBtn.setAttribute('aria-expanded', 'true');
+    timelineEl.classList.remove('hidden');
+    timelineEl.innerHTML = '<p class="change-timeline-empty">Loading history…</p>';
+    renderTimelineInto(timelineEl, await fetchSnapshotTimeline(item.id));
+    timelineBtn.disabled = false;
+  });
 
   const header = wrapper.querySelector<HTMLElement>('.saved-item-header')!;
   const body = wrapper.querySelector<HTMLElement>('.saved-item-body')!;
@@ -573,7 +657,8 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
     if (
       target?.closest('.saved-status-inline') ||
       target?.closest('.saved-status-save-btn') ||
-      target?.closest('.saved-status-cancel-btn')
+      target?.closest('.saved-status-cancel-btn') ||
+      target?.closest('.saved-watch-row')
     ) {
       return;
     }
@@ -636,7 +721,12 @@ export function renderSavedItem(item: SavedItem): HTMLElement {
         (e.target as HTMLElement).closest('.open-dashboard-saved-btn') ||
         (e.target as HTMLElement).closest('.saved-status-save-btn') ||
         (e.target as HTMLElement).closest('.saved-status-cancel-btn') ||
-        (e.target as HTMLElement).closest('.saved-status-inline')
+        (e.target as HTMLElement).closest('.saved-status-inline') ||
+        // The whole action cluster, not each button by name. This listener runs
+        // in the capture phase, so a stopPropagation() on the button itself
+        // fires too late to stop the card expanding.
+        (e.target as HTMLElement).closest('.header-actions-row') ||
+        (e.target as HTMLElement).closest('.saved-watch-row')
       ) {
         return;
       }

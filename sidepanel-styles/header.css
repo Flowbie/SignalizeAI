@@ -1,10 +1,14 @@
+/* View header: title on the left, icon actions on the right. Shared by every
+   top-level view, so it carries the panel's sense of hierarchy. */
+
 .content-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-color);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .content-header svg {
@@ -17,12 +21,30 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--radius-sm);
+  transition:
+    background-color var(--transition),
+    color var(--transition);
+}
+
+.content-header button:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+}
+
+.content-header button:hover:not(:disabled) svg {
+  stroke: var(--text-primary);
+}
+
+.content-header button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .content-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 
@@ -34,6 +56,7 @@
 .header-actions-right {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   position: relative;
+  flex-shrink: 0;
 }

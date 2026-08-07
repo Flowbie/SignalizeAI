@@ -1,171 +1,207 @@
 @import url('globals.css');
-/* Ensuring it plays nicely, we won't put theme in globals directly but as a new file, or we can replace globals.css background but theme.css is better */
+
+/*
+ * Design tokens.
+ *
+ * Every colour in the panel resolves through these variables, so the visual
+ * identity is retuned here rather than in the ~4.6k lines of component CSS.
+ * Token NAMES are load-bearing (component files reference them by name) ,
+ * change values freely, rename nothing.
+ *
+ * Identity: cool blue-biased slate ground, cyan accent taken from the app
+ * icon. Semantic colours
+ * (success / warning / danger) are deliberately independent of the accent so
+ * "this needs attention" never reads as "this is a button".
+ */
 
 :root,
 [data-theme='dark'] {
   color-scheme: dark;
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #111111;
-  --bg-hover: rgba(255, 255, 255, 0.05);
-  --bg-hover-strong: rgba(255, 255, 255, 0.1);
-  --bg-active: rgba(255, 255, 255, 0.15);
-  --bg-surface: rgba(255, 255, 255, 0.04);
-  --bg-surface-border: rgba(255, 255, 255, 0.06);
 
-  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  --dropdown-shadow: 0 12px 24px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--bg-hover);
+  /* Ground: a neutral charcoal ramp. The previous navy-tinted slate made every
+     hue placed on it read muddy; neutral grey lets one accent stay clean. */
+  --bg-primary: #0a0a0b;
+  --bg-secondary: #121214;
+  --bg-tertiary: #1a1a1d;
+  --bg-hover: rgba(255, 255, 255, 0.045);
+  --bg-hover-strong: rgba(255, 255, 255, 0.085);
+  --bg-active: rgba(255, 255, 255, 0.13);
+  --bg-surface: rgba(255, 255, 255, 0.035);
+  --bg-surface-border: rgba(255, 255, 255, 0.07);
 
-  --text-primary: #ffffff;
-  --text-secondary: #9ca3af;
-  --text-tertiary: rgba(255, 255, 255, 0.6);
-  --text-muted: rgba(255, 255, 255, 0.3);
+  /* Raised surface for things that float above a card. In dark, elevation
+     reads lighter than its ground; --bg-secondary is darker, so using it for
+     an overlay punched a hole instead of lifting off the page. */
+  --surface-raised: #26262a;
 
-  --border-color: #333333;
-  --border-light: rgba(255, 255, 255, 0.1);
-  --border-medium: rgba(255, 255, 255, 0.15);
+  --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --dropdown-shadow: 0 14px 32px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+  --text-primary: #f3f3f4;
+  --text-secondary: #9d9da5;
+  --text-tertiary: rgba(243, 243, 244, 0.68);
+  --text-muted: rgba(243, 243, 244, 0.4);
+
+  --border-color: #27272a;
+  --border-light: rgba(255, 255, 255, 0.075);
+  --border-medium: rgba(255, 255, 255, 0.13);
   --border-strong: rgba(255, 255, 255, 0.2);
 
-  --accent-color: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-light: #60a5fa;
-  --accent-blue: #4dabf7;
-  --accent-blue-hover: #339af0;
-  --accent-blue-bg: rgba(77, 171, 247, 0.1);
+  /* Sampled from the app icon itself: #27d1de is the mean of the cyan arcs,
+     #12376a the mean of the navy triangle. Cyan carries dark surfaces (10.6:1
+     here), navy carries light ones; each is unreadable on the other, which is
+     why the two themes use different halves of the same mark. */
+  --accent-color: #27d1de;
+  --accent-hover: #53dae5;
+  --accent-light: #7de3f4;
+  --accent-blue: #27d1de;
+  --accent-blue-hover: #53dae5;
+  --accent-blue-bg: rgba(39, 209, 222, 0.14);
+  --accent-soft: rgba(39, 209, 222, 0.14);
+  /* Ink that sits on a filled accent button, cyan is bright, so this is dark. */
+  --accent-on: #04222a;
 
-  --danger-color: #ef4444;
-  --danger-hover: #dc2626;
-  --danger-light: #ff4b4b;
-  --danger-bg: rgba(239, 68, 68, 0.1);
+  --danger-color: #e8637d;
+  --danger-hover: #ef7f95;
+  --danger-light: #ef7f95;
+  --danger-bg: rgba(232, 99, 125, 0.12);
 
-  --success-color: #10b981;
-  --warning-color: #f59e0b;
-  --status-not-contacted-text: #93c5fd;
-  --status-not-contacted-border: rgba(96, 165, 250, 0.28);
-  --status-not-contacted-bg: rgba(59, 130, 246, 0.14);
-  --status-contacted-text: #6ee7b7;
-  --status-contacted-border: rgba(16, 185, 129, 0.28);
-  --status-contacted-bg: rgba(16, 185, 129, 0.14);
-  --status-follow-up-text: #fcd34d;
-  --status-follow-up-border: rgba(245, 158, 11, 0.28);
-  --status-follow-up-bg: rgba(245, 158, 11, 0.16);
-  --reply-prob-high: #6ee7b7;
-  --reply-prob-high-border: rgba(16, 185, 129, 0.28);
-  --reply-prob-high-bg: rgba(16, 185, 129, 0.14);
-  --reply-prob-medium: #fcd34d;
-  --reply-prob-medium-border: rgba(245, 158, 11, 0.28);
-  --reply-prob-medium-bg: rgba(245, 158, 11, 0.16);
-  --reply-prob-low: #fda4af;
-  --reply-prob-low-border: rgba(244, 63, 94, 0.28);
-  --reply-prob-low-bg: rgba(244, 63, 94, 0.14);
-  --brand-ai: #00e5ff;
-  --status-control-bg: rgba(255, 255, 255, 0.06);
-  --status-control-border: rgba(255, 255, 255, 0.12);
-  --status-control-hover-bg: rgba(255, 255, 255, 0.1);
-  --status-control-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
-  --analysis-tabs-shell-bg: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.055),
-    rgba(255, 255, 255, 0.03)
-  );
-  --analysis-tabs-shell-border: rgba(255, 255, 255, 0.09);
-  --analysis-tabs-shell-shadow:
-    0 12px 28px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  --analysis-tab-text: rgba(255, 255, 255, 0.68);
-  --analysis-tab-hover-bg: rgba(255, 255, 255, 0.075);
-  --analysis-tab-hover-text: rgba(255, 255, 255, 0.96);
-  --analysis-tab-active-bg: linear-gradient(
-    135deg,
-    rgba(37, 99, 235, 0.34),
-    rgba(14, 165, 233, 0.2)
-  );
-  --analysis-tab-active-border: rgba(125, 211, 252, 0.26);
-  --analysis-tab-active-text: #ffffff;
-  --analysis-tab-active-shadow:
-    0 10px 22px rgba(2, 6, 23, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --analysis-tab-focus-ring: rgba(56, 189, 248, 0.28);
+  --success-color: #4ec99a;
+  --warning-color: #d9a441;
+
+  /* Severity rail. A graphic element, not text, so it is NOT the darkened
+     --warning-color: that value exists to clear 4.5:1 as type and turns muddy
+     brown when painted as a stripe. */
+  --severity-major: #e0a636;
+
+  --status-not-contacted-text: #9fb4d8;
+  --status-not-contacted-border: rgba(159, 180, 216, 0.28);
+  --status-not-contacted-bg: rgba(159, 180, 216, 0.13);
+  --status-contacted-text: #3ddc97;
+  --status-contacted-border: rgba(61, 220, 151, 0.3);
+  --status-contacted-bg: rgba(61, 220, 151, 0.13);
+  --status-follow-up-text: #f2b950;
+  --status-follow-up-border: rgba(242, 185, 80, 0.3);
+  --status-follow-up-bg: rgba(242, 185, 80, 0.15);
+
+  --reply-prob-high: #3ddc97;
+  --reply-prob-high-border: rgba(61, 220, 151, 0.3);
+  --reply-prob-high-bg: rgba(61, 220, 151, 0.13);
+  --reply-prob-medium: #f2b950;
+  --reply-prob-medium-border: rgba(242, 185, 80, 0.3);
+  --reply-prob-medium-bg: rgba(242, 185, 80, 0.15);
+  --reply-prob-low: #f4607e;
+  --reply-prob-low-border: rgba(244, 96, 126, 0.3);
+  --reply-prob-low-bg: rgba(244, 96, 126, 0.13);
+
+  --brand-ai: #27d1de;
+
+  --badge-hiring: #9d92e8;
+
+  --status-control-bg: rgba(255, 255, 255, 0.05);
+  --status-control-border: rgba(255, 255, 255, 0.11);
+  --status-control-hover-bg: rgba(255, 255, 255, 0.09);
+  --status-control-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+
+  --analysis-tabs-shell-bg: rgba(255, 255, 255, 0.035);
+  --analysis-tabs-shell-border: rgba(255, 255, 255, 0.08);
+  --analysis-tabs-shell-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --analysis-tab-text: rgba(243, 243, 244, 0.62);
+  --analysis-tab-hover-bg: rgba(255, 255, 255, 0.06);
+  --analysis-tab-hover-text: #f3f3f4;
+  --analysis-tab-active-bg: rgba(39, 209, 222, 0.15);
+  --analysis-tab-active-border: rgba(39, 209, 222, 0.4);
+  --analysis-tab-active-text: #7de3f4;
+  --analysis-tab-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --analysis-tab-focus-ring: rgba(39, 209, 222, 0.35);
 }
 
 [data-theme='light'] {
   color-scheme: light;
-  --bg-primary: #f9fafb;
+
+  --bg-primary: #fafafa;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #f3f4f6;
-  --bg-hover: rgba(0, 0, 0, 0.05);
-  --bg-hover-strong: rgba(0, 0, 0, 0.08);
-  --bg-active: rgba(0, 0, 0, 0.1);
+  --bg-tertiary: #f4f4f5;
+  --bg-hover: rgba(11, 14, 20, 0.045);
+  --bg-hover-strong: rgba(11, 14, 20, 0.075);
+  --bg-active: rgba(11, 14, 20, 0.1);
   --bg-surface: #ffffff;
-  --bg-surface-border: rgba(0, 0, 0, 0.1);
+  --bg-surface-border: rgba(11, 14, 20, 0.09);
 
-  --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-  --dropdown-shadow: 0 12px 28px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--border-light);
+  --surface-raised: #ffffff;
 
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-tertiary: rgba(0, 0, 0, 0.6);
-  --text-muted: rgba(0, 0, 0, 0.4);
+  --card-shadow: 0 6px 20px rgba(11, 14, 20, 0.07);
+  --dropdown-shadow: 0 14px 30px rgba(11, 14, 20, 0.12), 0 0 0 1px rgba(11, 14, 20, 0.05);
 
-  --border-color: #e5e7eb;
-  --border-light: rgba(0, 0, 0, 0.05);
-  --border-medium: rgba(0, 0, 0, 0.1);
-  --border-strong: rgba(0, 0, 0, 0.2);
+  --text-primary: #0c0c0d;
+  --text-secondary: #56565e;
+  --text-tertiary: rgba(12, 12, 13, 0.68);
+  --text-muted: rgba(12, 12, 13, 0.45);
 
-  --accent-color: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-light: #3b82f6;
-  --accent-blue: #228be6;
-  --accent-blue-hover: #1c7ed6;
-  --accent-blue-bg: rgba(34, 139, 230, 0.1);
+  --border-color: #e4e4e7;
+  --border-light: rgba(11, 14, 20, 0.07);
+  --border-medium: rgba(11, 14, 20, 0.12);
+  --border-strong: rgba(11, 14, 20, 0.2);
 
-  --danger-color: #dc2626;
-  --danger-hover: #b91c1c;
-  --danger-light: #ef4444;
-  --danger-bg: rgba(220, 38, 38, 0.1);
+  /* The navy half of the mark. The logo cyan is 1.8:1 on paper and unusable as
+     text or as a fill; this is 11.3:1, and white on it is 11.8:1. */
+  --accent-color: #12376a;
+  --accent-hover: #0e2c54;
+  --accent-light: #1d4d8f;
+  --accent-blue: #12376a;
+  --accent-blue-hover: #0e2c54;
+  --accent-blue-bg: rgba(18, 55, 106, 0.1);
+  --accent-soft: rgba(18, 55, 106, 0.1);
+  --accent-on: #ffffff;
 
-  --success-color: #059669;
-  --warning-color: #d97706;
-  --status-not-contacted-text: #1d4ed8;
-  --status-not-contacted-border: rgba(37, 99, 235, 0.18);
-  --status-not-contacted-bg: rgba(59, 130, 246, 0.12);
-  --status-contacted-text: #047857;
-  --status-contacted-border: rgba(5, 150, 105, 0.18);
-  --status-contacted-bg: rgba(16, 185, 129, 0.12);
-  --status-follow-up-text: #b45309;
-  --status-follow-up-border: rgba(217, 119, 6, 0.18);
-  --status-follow-up-bg: rgba(245, 158, 11, 0.14);
-  --reply-prob-high: #047857;
-  --reply-prob-high-border: rgba(5, 150, 105, 0.18);
-  --reply-prob-high-bg: rgba(16, 185, 129, 0.12);
-  --reply-prob-medium: #b45309;
-  --reply-prob-medium-border: rgba(217, 119, 6, 0.18);
-  --reply-prob-medium-bg: rgba(245, 158, 11, 0.14);
-  --reply-prob-low: #be123c;
-  --reply-prob-low-border: rgba(225, 29, 72, 0.18);
-  --reply-prob-low-bg: rgba(244, 63, 94, 0.12);
-  --brand-ai: #1a237e;
-  --status-control-bg: rgba(255, 255, 255, 0.92);
-  --status-control-border: rgba(15, 23, 42, 0.08);
-  --status-control-hover-bg: rgba(241, 245, 249, 1);
-  --status-control-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
-  --analysis-tabs-shell-bg: linear-gradient(
-    180deg,
-    rgba(248, 250, 252, 0.96),
-    rgba(241, 245, 249, 0.92)
-  );
-  --analysis-tabs-shell-border: rgba(148, 163, 184, 0.16);
-  --analysis-tabs-shell-shadow:
-    0 12px 24px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.95);
-  --analysis-tab-text: #5f6f85;
-  --analysis-tab-hover-bg: rgba(255, 255, 255, 0.98);
-  --analysis-tab-hover-text: #0f172a;
-  --analysis-tab-active-bg: linear-gradient(
-    135deg,
-    rgba(219, 234, 254, 0.96),
-    rgba(224, 242, 254, 0.92)
-  );
-  --analysis-tab-active-border: rgba(96, 165, 250, 0.24);
-  --analysis-tab-active-text: #1e3a8a;
-  --analysis-tab-active-shadow:
-    0 10px 20px rgba(37, 99, 235, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --analysis-tab-focus-ring: rgba(59, 130, 246, 0.22);
+  --danger-color: #c9203f;
+  --danger-hover: #a81833;
+  --danger-light: #dc2f4e;
+  --danger-bg: rgba(201, 32, 63, 0.09);
+
+  --success-color: #0a7a55;
+  --warning-color: #8a5a12;
+
+  --severity-major: #e3a52c;
+
+  --status-not-contacted-text: #3c5a86;
+  --status-not-contacted-border: rgba(60, 90, 134, 0.2);
+  --status-not-contacted-bg: rgba(60, 90, 134, 0.09);
+  --status-contacted-text: #067a54;
+  --status-contacted-border: rgba(6, 122, 84, 0.2);
+  --status-contacted-bg: rgba(6, 122, 84, 0.09);
+  --status-follow-up-text: #9a6212;
+  --status-follow-up-border: rgba(154, 98, 18, 0.2);
+  --status-follow-up-bg: rgba(154, 98, 18, 0.1);
+
+  --reply-prob-high: #067a54;
+  --reply-prob-high-border: rgba(6, 122, 84, 0.2);
+  --reply-prob-high-bg: rgba(6, 122, 84, 0.09);
+  --reply-prob-medium: #9a6212;
+  --reply-prob-medium-border: rgba(154, 98, 18, 0.2);
+  --reply-prob-medium-bg: rgba(154, 98, 18, 0.1);
+  --reply-prob-low: #c9203f;
+  --reply-prob-low-border: rgba(201, 32, 63, 0.2);
+  --reply-prob-low-bg: rgba(201, 32, 63, 0.09);
+
+  --brand-ai: #12376a;
+
+  --badge-hiring: #5b3bc4;
+
+  --status-control-bg: #ffffff;
+  --status-control-border: rgba(11, 14, 20, 0.09);
+  --status-control-hover-bg: #f1f3f8;
+  --status-control-shadow: 0 8px 20px rgba(11, 14, 20, 0.08);
+
+  --analysis-tabs-shell-bg: #f1f3f8;
+  --analysis-tabs-shell-border: rgba(11, 14, 20, 0.07);
+  --analysis-tabs-shell-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --analysis-tab-text: #56565e;
+  --analysis-tab-hover-bg: #ffffff;
+  --analysis-tab-hover-text: #0c0c0d;
+  --analysis-tab-active-bg: rgba(18, 55, 106, 0.11);
+  --analysis-tab-active-border: rgba(18, 55, 106, 0.32);
+  --analysis-tab-active-text: #12376a;
+  --analysis-tab-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --analysis-tab-focus-ring: rgba(18, 55, 106, 0.3);
 }

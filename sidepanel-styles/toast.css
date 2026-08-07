@@ -1,26 +1,50 @@
+/* Toasts sit above the quota bar rather than on top of it, and are pinned to
+   the panel gutters instead of a fixed 280px min-width, which overflowed a
+   narrow panel. Radius, spacing and easing come from the shared tokens. */
 .toast-snackbar {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: var(--bg-tertiary);
-  backdrop-filter: blur(10px);
+  bottom: 84px;
+  left: var(--space-4);
+  right: var(--space-4);
+  /* Percentage travel alone is not enough: it is relative to the toast height,
+     and the toast is offset 84px up to clear the quota bar, so 140% of a short
+     toast left it parked on the bottom edge instead of off screen. Opacity and
+     visibility make the hidden state true regardless of geometry. */
+  transform: translateY(calc(100% + 96px));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  background: var(--bg-secondary);
   color: var(--text-primary);
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
   overflow: hidden;
   z-index: 10000;
-  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease,
+    visibility 0s linear 320ms;
   box-shadow: var(--dropdown-shadow);
-  min-width: 280px;
+}
+
+/* When the quota bar is not showing there is nothing to clear. */
+body:not(:has(#quota-banner:not(.hidden))) .toast-snackbar {
+  bottom: var(--space-4);
 }
 
 .toast-snackbar.show {
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease,
+    visibility 0s linear 0s;
 }
 
 .toast-content {
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -30,50 +54,62 @@
 .toast-main {
   display: flex;
   align-items: center;
-  font-size: 13.5px;
-  font-weight: 400;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
   color: var(--text-primary);
 }
 
+/* Was --danger-light unconditionally, so a neutral "Copied" toast still showed
+   a red icon. Errors opt into the danger colour below. */
 .toast-icon {
-  opacity: 0.6;
-  color: var(--danger-light);
+  color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
 .toast-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-1);
+  flex-shrink: 0;
 }
 
 #undo-button {
-  background: var(--accent-blue-bg);
-  border: none;
-  color: var(--accent-blue);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
+  color: var(--accent-color);
+  font-family: inherit;
   font-weight: 600;
   cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 5px 11px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
-  letter-spacing: 0.5px;
-  transition: background 0.2s ease;
+  white-space: nowrap;
+  transition:
+    background-color var(--transition),
+    border-color var(--transition);
 }
 
 #undo-button:hover {
-  background: var(--accent-blue-bg);
+  background: color-mix(in srgb, var(--accent-color) 22%, transparent);
+  border-color: color-mix(in srgb, var(--accent-color) 50%, transparent);
 }
 
 #close-toast-btn {
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  transition:
+    background-color var(--transition),
+    color var(--transition);
 }
 
 #close-toast-btn:hover {
@@ -90,7 +126,7 @@
 .undo-progress-bar {
   height: 100%;
   width: 100%;
-  background: var(--accent-blue);
+  background: var(--accent-color);
   transform-origin: left;
 }
 
@@ -110,35 +146,51 @@
 
 /* Error Toast Styles */
 .error-toast {
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: color-mix(in srgb, var(--danger-color) 35%, transparent);
 }
 
 .error-toast .toast-icon {
-  color: #ef4444;
+  color: var(--danger-color);
   opacity: 1;
   margin-right: 8px;
   flex-shrink: 0;
 }
 
+/* The neutral toast has one child and no action button, so it should not push
+   its text out to the edges the way the error and undo layouts do. */
+#simple-toast .toast-content {
+  justify-content: flex-start;
+}
+
+.toast-message {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
 .error-toast .toast-message {
-  font-size: 13.5px;
-  font-weight: 400;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
   color: var(--text-primary);
 }
 
 .error-toast .toast-close-btn {
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  font-size: 14px;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
   margin-left: auto;
+  transition:
+    background-color var(--transition),
+    color var(--transition);
 }
 
 .error-toast .toast-close-btn:hover {

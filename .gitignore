@@ -5,3 +5,6 @@ manifest.json
 .env*.local
 src/config.js
 src/config.ts
+
+# Local visual-QA harness output (must not ship: Chrome rejects it)
+qa-preview/

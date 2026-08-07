@@ -28,16 +28,23 @@
 }
 
 .outreach-label {
-  font-size: 12px;
-  font-weight: 600;
+  /* Metadata, not content: small, mono, tracked, and quiet. Previously this
+     was 12px/600 in --text-secondary while the value it labelled was 14px/400
+     in the dimmer --text-tertiary, so the label out-shouted the answer.
+     The size, mono face and casing carry the hierarchy, the colour stays at
+     --text-secondary because --text-muted only reaches 3:1 at 10px. */
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.13em;
 }
 
 .outreach-value {
+  /* The content is what the user came to read, full strength. */
   font-size: 14px;
-  color: var(--text-tertiary);
+  color: var(--text-primary);
   line-height: 1.6;
 }
 
@@ -87,11 +94,17 @@
 }
 
 .outreach-message-label {
-  font-size: 12px;
-  font-weight: 600;
+  /* Metadata, not content: small, mono, tracked, and quiet. Previously this
+     was 12px/600 in --text-secondary while the value it labelled was 14px/400
+     in the dimmer --text-tertiary, so the label out-shouted the answer.
+     The size, mono face and casing carry the hierarchy, the colour stays at
+     --text-secondary because --text-muted only reaches 3:1 at 10px. */
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.13em;
 }
 
 .outreach-message-box {

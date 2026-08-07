@@ -5,9 +5,13 @@ import { state } from './state.js';
 import { extractWebsiteContent } from './analysis/index.js';
 import { attachAnalysisDashboardHandler } from './dashboard-link.js';
 import { exitSelectionMode, loadSavedAnalyses } from './saved/index.js';
+import { loadChangesFeed } from './changes/render.js';
+import { refreshChangesBadge } from './changes/badge.js';
 import type { Session } from '@supabase/supabase-js';
 
-export function navigateTo(view: 'analysis' | 'saved' | 'batch' | 'profile' | 'settings'): void {
+export function navigateTo(
+  view: 'analysis' | 'saved' | 'batch' | 'changes' | 'profile' | 'settings'
+): void {
   const prevView = state.currentView;
 
   if (prevView === 'analysis' && view !== 'analysis') {
@@ -31,6 +35,7 @@ export function navigateTo(view: 'analysis' | 'saved' | 'batch' | 'profile' | 's
   document.getElementById('manual-url-container')?.classList.add('hidden');
   document.getElementById('empty-tab-view')?.classList.add('hidden');
   document.getElementById('saved-analyses')?.classList.add('hidden');
+  document.getElementById('changes-view')?.classList.add('hidden');
   document.getElementById('batch-view')?.classList.add('hidden');
   document.getElementById('profile-view')?.classList.add('hidden');
   document.getElementById('settings-view')?.classList.add('hidden');
@@ -71,6 +76,13 @@ export function navigateTo(view: 'analysis' | 'saved' | 'batch' | 'profile' | 's
 
   if (view === 'batch') {
     document.getElementById('batch-view')?.classList.remove('hidden');
+  }
+
+  if (view === 'changes') {
+    document.getElementById('changes-view')?.classList.remove('hidden');
+    requestAnimationFrame(() => {
+      void loadChangesFeed();
+    });
   }
 
   if (view === 'profile') {
@@ -141,6 +153,7 @@ export async function updateUI(session: Session | null): Promise<void> {
     }
 
     await loadQuotaFromAPI();
+    void refreshChangesBadge();
 
     const isMenuOpen = document.querySelector('.dropdown-card')?.classList.contains('expanded');
 

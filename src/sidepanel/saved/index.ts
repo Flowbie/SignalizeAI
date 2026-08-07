@@ -11,12 +11,7 @@ export { renderPagination } from './pagination.js';
 
 export { exportToCSV, exportToExcel, handleExport } from './export.js';
 
-export {
-  areFiltersActive,
-  updateFilterBanner,
-  formatResultsText,
-  toggleSearchMode,
-} from './filtering.js';
+export { areFiltersActive, updateFilterBanner, formatResultsText } from './filtering.js';
 
 export {
   updateSavedActionsVisibility,

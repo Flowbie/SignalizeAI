@@ -1,11 +1,26 @@
 .secondary-btn {
   background: transparent;
-  border: none;
-  border-radius: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   padding: 6px;
   cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
   color: var(--text-primary);
-  transition: background 0.2s;
+  transition:
+    background-color var(--transition),
+    border-color var(--transition),
+    color var(--transition);
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
+}
+
+.secondary-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .export-toggle-icon {

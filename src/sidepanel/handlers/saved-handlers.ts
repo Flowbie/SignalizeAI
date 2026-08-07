@@ -6,7 +6,6 @@ import { updateAnalysisDashboardButton } from '../dashboard-link.js';
 import {
   loadSavedAnalyses,
   exitSelectionMode,
-  toggleSearchMode,
   toggleSelectAllVisible,
   fetchAndRenderPage,
   updateDeleteState,
@@ -96,12 +95,7 @@ export function setupSavedHandlers(): void {
     toggleSelectAllVisible();
   });
 
-  const searchToggle = document.getElementById('search-toggle');
   const searchInput = document.getElementById('saved-search-input') as HTMLInputElement | null;
-  const searchCloseBtn = document.getElementById('search-close-btn');
-
-  searchToggle?.addEventListener('click', () => toggleSearchMode(true));
-  searchCloseBtn?.addEventListener('click', () => toggleSearchMode(false));
 
   searchInput?.addEventListener('input', async (e: Event) => {
     const target = e.target as HTMLInputElement;

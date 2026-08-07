@@ -3,45 +3,59 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: var(--space-8) var(--space-5);
   text-align: center;
 }
 
+/* The icon sets the mood, it is not the message, recede it and let the
+   title carry the weight. */
 .empty-icon {
-  margin-bottom: 16px;
-  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent-color);
 }
 
 .empty-title {
   font-size: 16px;
   font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
-  margin: 0 0 8px 0 !important;
+  margin: 0 0 var(--space-2) 0 !important;
 }
 
 .empty-subtitle {
   font-size: 13px;
-  color: var(--text-tertiary);
-  margin: 0 0 20px 0 !important;
-  max-width: 200px;
-  line-height: 1.4;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-5) 0 !important;
+  /* 200px forced awkward 3-4 word lines at panel width. */
+  max-width: 264px;
+  line-height: 1.55;
+  text-wrap: pretty;
 }
 
 .reset-button-ui {
-  background: var(--bg-hover-strong);
-  border: 1px solid var(--border-strong);
-  color: var(--text-primary);
-  padding: 8px 16px;
-  border-radius: 6px;
+  background: var(--accent-color);
+  border: 1px solid transparent;
+  color: var(--accent-on);
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--transition),
+    transform var(--transition);
 }
 
 .reset-button-ui:hover {
-  background: var(--bg-active);
-  border-color: var(--text-muted);
+  background: var(--accent-hover);
 }
 
 .reset-button-ui:active {
@@ -58,9 +72,18 @@
   min-height: 300px;
 }
 
+/* Same treatment as .empty-icon: the glyph sits in an accent-tinted disc so
+   the first screen a new user sees has some life in it. The icons are <img>
+   SVGs recoloured by filter, so the colour lives on the container. */
 .empty-tab-icon {
-  margin-bottom: 24px;
-  opacity: 0.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-6);
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
   animation: floatIcon 3s ease-in-out infinite;
 }
 
@@ -77,33 +100,36 @@
 
 .empty-tab-icon img {
   display: block;
-  width: 64px;
-  height: 64px;
-  opacity: 0.4;
+  width: 28px;
+  height: 28px;
 }
 
+/* Tint the glyph to the accent rather than flat black/white. */
 [data-theme='dark'] .empty-tab-icon img {
-  filter: brightness(0) invert(1);
+  filter: brightness(0) saturate(100%) invert(72%) sepia(58%) saturate(2296%) hue-rotate(140deg)
+    brightness(96%) contrast(89%);
 }
 
 [data-theme='light'] .empty-tab-icon img {
-  filter: brightness(0) invert(0);
+  filter: brightness(0) saturate(100%) invert(28%) sepia(87%) saturate(1157%) hue-rotate(160deg)
+    brightness(93%) contrast(94%);
 }
 
 .empty-tab-title {
   font-size: 22px;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 12px 0;
-  letter-spacing: -0.5px;
+  margin: 0 0 var(--space-3) 0;
+  letter-spacing: -0.03em;
 }
 
 .empty-tab-description {
   font-size: 14px;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   line-height: 1.6;
-  margin: 0 0 32px 0;
+  margin: 0 0 var(--space-8) 0;
   max-width: 280px;
+  text-wrap: pretty;
 }
 
 .empty-tab-tips {
@@ -137,17 +163,18 @@
   height: 20px;
 }
 
+/* Was 0.6/0.4 grey, which read as washed out next to the label. */
 [data-theme='dark'] .tip-item .tip-icon {
-  filter: brightness(0) invert(0.6);
+  filter: brightness(0) invert(0.78);
 }
 
 [data-theme='light'] .tip-item .tip-icon {
-  filter: brightness(0) invert(0.4);
+  filter: brightness(0) invert(0.28);
 }
 
 .tip-item span {
   font-size: 13px;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   text-align: left;
   font-weight: 500;
 }

@@ -7,6 +7,8 @@ import {
 } from '../analysis/index.js';
 import { loadQuotaFromAPI } from '../quota.js';
 import { loadSavedAnalyses } from '../saved/index.js';
+import { refreshChangesBadge } from '../changes/badge.js';
+import { loadChangesFeed } from '../changes/render.js';
 import { applyTheme, saveSettings } from '../settings.js';
 import { supabase } from '../supabase.js';
 import { state } from '../state.js';
@@ -91,6 +93,14 @@ export function setupRuntimeHandlers(): void {
         await new Promise((resolve) => setTimeout(resolve, 500));
         await loadQuotaFromAPI(true);
         updateUI(data.session);
+        break;
+      }
+      case 'WATCH_CHANGES_DETECTED': {
+        if (state.currentView === 'changes') {
+          void loadChangesFeed();
+        } else {
+          void refreshChangesBadge();
+        }
         break;
       }
       case 'PROSPECT_STATUS_UPDATED': {
