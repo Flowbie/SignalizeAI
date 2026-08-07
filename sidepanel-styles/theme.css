@@ -47,15 +47,17 @@
   --border-medium: rgba(255, 255, 255, 0.13);
   --border-strong: rgba(255, 255, 255, 0.2);
 
-  /* Cyan accent, taken from the app icon so the panel and the mark read as one
-     product. One bold colour, used only for primary actions and links. */
-  --accent-color: #22d3ee;
-  --accent-hover: #67e8f9;
+  /* Sampled from the app icon itself: #27d1de is the mean of the cyan arcs,
+     #12376a the mean of the navy triangle. Cyan carries dark surfaces (10.6:1
+     here), navy carries light ones; each is unreadable on the other, which is
+     why the two themes use different halves of the same mark. */
+  --accent-color: #27d1de;
+  --accent-hover: #53dae5;
   --accent-light: #7de3f4;
-  --accent-blue: #22d3ee;
-  --accent-blue-hover: #67e8f9;
-  --accent-blue-bg: rgba(34, 211, 238, 0.14);
-  --accent-soft: rgba(34, 211, 238, 0.14);
+  --accent-blue: #27d1de;
+  --accent-blue-hover: #53dae5;
+  --accent-blue-bg: rgba(39, 209, 222, 0.14);
+  --accent-soft: rgba(39, 209, 222, 0.14);
   /* Ink that sits on a filled accent button, cyan is bright, so this is dark. */
   --accent-on: #04222a;
 
@@ -92,7 +94,7 @@
   --reply-prob-low-border: rgba(244, 96, 126, 0.3);
   --reply-prob-low-bg: rgba(244, 96, 126, 0.13);
 
-  --brand-ai: #22d3ee;
+  --brand-ai: #27d1de;
 
   --badge-hiring: #9d92e8;
 
@@ -107,11 +109,11 @@
   --analysis-tab-text: rgba(243, 243, 244, 0.62);
   --analysis-tab-hover-bg: rgba(255, 255, 255, 0.06);
   --analysis-tab-hover-text: #f3f3f4;
-  --analysis-tab-active-bg: rgba(34, 211, 238, 0.15);
-  --analysis-tab-active-border: rgba(34, 211, 238, 0.4);
+  --analysis-tab-active-bg: rgba(39, 209, 222, 0.15);
+  --analysis-tab-active-border: rgba(39, 209, 222, 0.4);
   --analysis-tab-active-text: #7de3f4;
   --analysis-tab-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --analysis-tab-focus-ring: rgba(34, 211, 238, 0.35);
+  --analysis-tab-focus-ring: rgba(39, 209, 222, 0.35);
 }
 
 [data-theme='light'] {
@@ -141,15 +143,15 @@
   --border-medium: rgba(11, 14, 20, 0.12);
   --border-strong: rgba(11, 14, 20, 0.2);
 
-  /* Deep cyan: the bright icon cyan cannot clear 4.5:1 on white, so the light
-     theme uses a darkened member of the same family. */
-  --accent-color: #0e7490;
-  --accent-hover: #155e75;
-  --accent-light: #1596b8;
-  --accent-blue: #0e7490;
-  --accent-blue-hover: #155e75;
-  --accent-blue-bg: rgba(14, 116, 144, 0.1);
-  --accent-soft: rgba(14, 116, 144, 0.1);
+  /* The navy half of the mark. The logo cyan is 1.8:1 on paper and unusable as
+     text or as a fill; this is 11.3:1, and white on it is 11.8:1. */
+  --accent-color: #12376a;
+  --accent-hover: #0e2c54;
+  --accent-light: #1d4d8f;
+  --accent-blue: #12376a;
+  --accent-blue-hover: #0e2c54;
+  --accent-blue-bg: rgba(18, 55, 106, 0.1);
+  --accent-soft: rgba(18, 55, 106, 0.1);
   --accent-on: #ffffff;
 
   --danger-color: #c9203f;
@@ -182,7 +184,7 @@
   --reply-prob-low-border: rgba(201, 32, 63, 0.2);
   --reply-prob-low-bg: rgba(201, 32, 63, 0.09);
 
-  --brand-ai: #0e7490;
+  --brand-ai: #12376a;
 
   --badge-hiring: #5b3bc4;
 
@@ -197,9 +199,9 @@
   --analysis-tab-text: #56565e;
   --analysis-tab-hover-bg: #ffffff;
   --analysis-tab-hover-text: #0c0c0d;
-  --analysis-tab-active-bg: rgba(14, 116, 144, 0.11);
-  --analysis-tab-active-border: rgba(14, 116, 144, 0.32);
-  --analysis-tab-active-text: #0b5768;
+  --analysis-tab-active-bg: rgba(18, 55, 106, 0.11);
+  --analysis-tab-active-border: rgba(18, 55, 106, 0.32);
+  --analysis-tab-active-text: #12376a;
   --analysis-tab-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --analysis-tab-focus-ring: rgba(14, 116, 144, 0.3);
+  --analysis-tab-focus-ring: rgba(18, 55, 106, 0.3);
 }
