@@ -73,19 +73,25 @@
   vertical-align: middle;
 }
 
+/* A domain is an identifier, so it never truncates. If the badge, domain and
+   timestamp cannot share a line, the timestamp drops below rather than eating
+   into the name: real domains are longer than the mock ones this was built
+   against, and "northwind-logistics…" tells you nothing. */
 .change-card-header {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-2);
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
   margin-bottom: var(--space-2);
 }
 
 .change-card-heading {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: var(--space-2);
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .change-badge {
@@ -138,9 +144,8 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .change-date {
@@ -150,6 +155,7 @@
   color: var(--text-muted);
   white-space: nowrap;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .change-summary {
