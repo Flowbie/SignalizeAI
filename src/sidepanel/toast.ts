@@ -7,7 +7,21 @@ export function showToast(message: string): void {
     document.body.appendChild(toast);
   }
 
-  toast.textContent = message;
+  // The shell carries the surface; the padding lives on .toast-content, so a
+  // bare text node sat flush against the border with no inset at all. Build the
+  // same structure the error toast uses so both look like one component.
+  toast.textContent = '';
+  const content = document.createElement('div');
+  content.className = 'toast-content';
+  const main = document.createElement('div');
+  main.className = 'toast-main';
+  const text = document.createElement('span');
+  text.className = 'toast-message';
+  text.textContent = message;
+  main.appendChild(text);
+  content.appendChild(main);
+  toast.appendChild(content);
+
   toast.classList.add('show');
 
   setTimeout(() => {

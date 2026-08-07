@@ -156,6 +156,19 @@ body:not(:has(#quota-banner:not(.hidden))) .toast-snackbar {
   flex-shrink: 0;
 }
 
+/* The neutral toast has one child and no action button, so it should not push
+   its text out to the edges the way the error and undo layouts do. */
+#simple-toast .toast-content {
+  justify-content: flex-start;
+}
+
+.toast-message {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
 .error-toast .toast-message {
   min-width: 0;
   font-size: 13px;
