@@ -1,4 +1,4 @@
-# Store assets
+# Store publishing
 
 Chrome Web Store and AMO screenshots, 1280x800 PNG.
 
@@ -6,7 +6,7 @@ Regenerate after any UI change:
 
 ```bash
 python3 -m http.server 8901 &
-node store-assets/capture.mjs
+node store-publishing/capture.mjs
 ```
 
 The generator renders the **real** `sidepanel.css` against real component

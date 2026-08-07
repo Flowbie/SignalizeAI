@@ -9,14 +9,14 @@
  *
  * Usage, from the repo root:
  *   python3 -m http.server 8901 &
- *   node store-assets/capture.mjs
+ *   node store-publishing/capture.mjs
  */
 import { chromium } from '/home/royalpinto007/Open-Source/Hookprint/node_modules/playwright/index.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const DIR = path.resolve(import.meta.dirname, '..');
-const OUT = path.join(DIR, 'store-assets');
+const OUT = path.join(DIR, 'store-publishing');
 const BASE = 'http://127.0.0.1:8901';
 
 const ic = (p, w = 18) =>
