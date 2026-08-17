@@ -128,7 +128,7 @@ export async function fetchAndExtractContent(
         })();
 
     if (!fetchRes.ok) {
-      return { ok: false, error: fetchRes.error };
+      return { ok: false, error: fetchRes.error || 'Fetch failed' };
     }
 
     if (fetchRes.status < 200 || fetchRes.status >= 300) {

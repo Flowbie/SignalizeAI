@@ -7,13 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- **Redundant content script injection on signalizeai.org.** The auth bridge
-  returned a value from its `chrome.runtime.onMessage` listener instead of
-  calling `sendResponse`, so the extension's `__PING__` probe went unanswered
-  and the side panel re-injected the content extractor on every page load.
-
 ## [5.5.0]
 
 ### Added

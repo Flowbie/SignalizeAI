@@ -129,13 +129,13 @@ window.addEventListener('message', (event: MessageEvent) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === '__PING__') {
-    // Must go through sendResponse. Returning the object instead leaves the
-    // caller's callback with no reply, so ensureContentScriptLoaded() treats
-    // this bridge as absent and re-injects the extractor on every page it
-    // already covers. content-extractor.ts handles __PING__ the same way.
-    sendResponse({ ok: true });
+    // Deliberately does not answer. __PING__ asks whether the *extractor* is
+    // loaded, and this bridge does not handle EXTRACT_WEBSITE_CONTENT. Release
+    // manifests declare only this script on signalizeai.org, so the unanswered
+    // ping is what makes ensureContentScriptLoaded() inject the extractor here.
+    // Answering would skip that injection and break extraction on this origin.
     return false;
   }
 
