@@ -129,9 +129,14 @@ window.addEventListener('message', (event: MessageEvent) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === '__PING__') {
-    return { ok: true };
+    // Must go through sendResponse. Returning the object instead leaves the
+    // caller's callback with no reply, so ensureContentScriptLoaded() treats
+    // this bridge as absent and re-injects the extractor on every page it
+    // already covers. content-extractor.ts handles __PING__ the same way.
+    sendResponse({ ok: true });
+    return false;
   }
 
   if (message?.type === 'SYNC_EXTENSION_SIGNED_OUT') {
@@ -141,7 +146,7 @@ chrome.runtime.onMessage.addListener((message) => {
       },
       window.location.origin
     );
-    return;
+    return false;
   }
 
   if (message?.type === 'SYNC_EXTENSION_THEME') {
@@ -152,7 +157,7 @@ chrome.runtime.onMessage.addListener((message) => {
       },
       window.location.origin
     );
-    return;
+    return false;
   }
 
   if (message?.type === 'SYNC_PROSPECT_CONTENT_TO_PAGE') {
@@ -164,10 +169,10 @@ chrome.runtime.onMessage.addListener((message) => {
       },
       window.location.origin
     );
-    return;
+    return false;
   }
 
-  if (message?.type !== 'SYNC_PROSPECT_STATUS_TO_PAGE') return;
+  if (message?.type !== 'SYNC_PROSPECT_STATUS_TO_PAGE') return false;
 
   window.postMessage(
     {
@@ -177,6 +182,7 @@ chrome.runtime.onMessage.addListener((message) => {
     },
     window.location.origin
   );
+  return false;
 });
 
 syncStoredWebsiteSession();
